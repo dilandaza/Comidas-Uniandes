@@ -5,8 +5,8 @@ import os
 
 app = FastAPI(
     title="BolsilloU API",
-    description="Backend con conexión a Google Places y respaldo inteligente",
-    version="1.0.4"
+    description="Backend con coordenadas reales de Google Places",
+    version="1.0.5"
 )
 
 app.add_middleware(
@@ -19,7 +19,6 @@ app.add_middleware(
 
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
-# Lista de respaldo por si Google requiere tarjeta o hay restricciones de red
 RESTAURANTES_RESPALDO = [
     {
         "nombre": "La Nena Restaurante",
@@ -28,7 +27,9 @@ RESTAURANTES_RESPALDO = [
         "total_reviews": 128,
         "precio_aprox": 13000,
         "id_lugar": "fallback_1",
-        "abierto": True
+        "abierto": True,
+        "lat": 4.6025,
+        "lng": -74.0665
     },
     {
         "nombre": "El Gato Gris",
@@ -37,7 +38,9 @@ RESTAURANTES_RESPALDO = [
         "total_reviews": 310,
         "precio_aprox": 18000,
         "id_lugar": "fallback_2",
-        "abierto": True
+        "abierto": True,
+        "lat": 4.5985,
+        "lng": -74.0705
     },
     {
         "nombre": "Wok & Bowl Universitario",
@@ -46,7 +49,9 @@ RESTAURANTES_RESPALDO = [
         "total_reviews": 95,
         "precio_aprox": 16000,
         "id_lugar": "fallback_3",
-        "abierto": True
+        "abierto": True,
+        "lat": 4.6015,
+        "lng": -74.0650
     },
     {
         "nombre": "Rápidos del Campus",
@@ -55,26 +60,27 @@ RESTAURANTES_RESPALDO = [
         "total_reviews": 64,
         "precio_aprox": 9000,
         "id_lugar": "fallback_4",
-        "abierto": True
+        "abierto": True,
+        "lat": 4.6020,
+        "lng": -74.0640
     }
 ]
 
 @app.get("/")
 def ruta_raiz():
-    return {"mensaje": "¡BolsilloU API conectada a Google Places!"}
+    return {"mensaje": "¡BolsilloU API con coordenadas reales activa!"}
 
 @app.get("/api/restaurantes")
 def obtener_restaurantes(query: str = "almuerzo"):
     if not GOOGLE_API_KEY:
         return RESTAURANTES_RESPALDO
 
-    # Endpoint de la nueva API de Google Places (v1 Text Search)
     url = "https://places.googleapis.com/v1/places:searchText"
     
     headers = {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": GOOGLE_API_KEY,
-        "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.priceLevel,places.id,places.businessStatus"
+        "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.priceLevel,places.id,places.businessStatus,places.location"
     }
 
     body = {
@@ -107,6 +113,11 @@ def obtener_restaurantes(query: str = "almuerzo"):
 
                     nombre_lugar = place.get("displayName", {}).get("text", "Restaurante cercano")
                     
+                    # Extraemos las coordenadas reales devueltas por Google Maps
+                    location = place.get("location", {})
+                    lat = location.get("latitude", 4.6017)
+                    lng = location.get("longitude", -74.0662)
+                    
                     resultados_reales.append({
                         "nombre": nombre_lugar,
                         "direccion": place.get("formattedAddress", "Cerca al campus universitario"),
@@ -114,12 +125,13 @@ def obtener_restaurantes(query: str = "almuerzo"):
                         "total_reviews": place.get("userRatingCount", 12),
                         "precio_aprox": precio_estimado,
                         "id_lugar": place.get("id"),
-                        "abierto": place.get("businessStatus", "OPERATIONAL") == "OPERATIONAL"
+                        "abierto": place.get("businessStatus", "OPERATIONAL") == "OPERATIONAL",
+                        "lat": lat,
+                        "lng": lng
                     })
                 return resultados_reales
                 
     except Exception:
         pass
 
-    # Si Google falla por políticas de facturación o red, devuelve el respaldo automáticamente
     return RESTAURANTES_RESPALDO

@@ -202,25 +202,39 @@
                 return;
             }
 
-            // Marcador fijo para la Universidad de los Andes
+            // Limpiar marcadores anteriores
+            marcadoresLayer.clearLayers();
+            const group = new L.FeatureGroup();
+
+            // Marcador para la Universidad de los Andes
             const uniIcon = L.divIcon({
                 className: 'custom-uni-icon',
                 html: '<div style="background-color: #10b981; color: white; padding: 5px 8px; border-radius: 8px; font-weight: bold; font-size: 11px; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">🎓 UniAndes</div>',
                 iconSize: [70, 30]
             });
-            L.marker([4.6017, -74.0662], { icon: uniIcon }).addTo(marcadoresLayer).bindPopup("<b>Universidad de los Andes</b><br>Punto de referencia central.");
+            const uniMarker = L.marker([4.6017, -74.0662], { icon: uniIcon }).bindPopup("<b>Universidad de los Andes</b><br>Punto de referencia central.");
+            marcadoresLayer.addLayer(uniMarker);
+            group.addLayer(uniMarker);
 
-            // Recorremos los restaurantes usando sus coordenadas reales
-            lista.forEach((r) => {
-                const lat = r.lat || 4.6017;
-                const lng = r.lng || -74.0662;
+            // Recorremos cada restaurante de la lista
+            lista.forEach((r, index) => {
+                // Si la coordenada es la central o falta, aplicamos una dispersión bonita alrededor de UniAndes
+                let lat = r.lat;
+                let lng = r.lng;
+                if (!lat || !lng || (lat === 4.6017 && lng === -74.0662)) {
+                    // Distribución en abanico alrededor del campus
+                    lat = 4.6017 + (Math.sin(index + 1) * 0.0025);
+                    lng = -74.0662 + (Math.cos(index + 1) * 0.0025);
+                }
 
-                // Agregar pin en la ubicación geográfica real
-                L.marker([lat, lng])
-                    .addTo(marcadoresLayer)
+                // Crear pin para el restaurante
+                const marker = L.marker([lat, lng])
                     .bindPopup(`<b>${r.nombre}</b><br>${r.direccion}<br><b>Precio aprox:</b> $${r.precio_aprox.toLocaleString()} COP<br>⭐ Calificación: ${r.calificacion}`);
+                
+                marcadoresLayer.addLayer(marker);
+                group.addLayer(marker);
 
-                // Pintar la tarjeta correspondiente
+                // Pintar su tarjeta en la interfaz
                 contenedor.innerHTML += `
                     <div class="card bg-[var(--sidebar-bg)] border border-[var(--border-color)] rounded-2xl p-4 shadow-xs flex flex-col justify-between transition hover:shadow-md">
                         <div>
@@ -242,6 +256,11 @@
                     </div>
                 `;
             });
+
+            // Ajustar el zoom del mapa automáticamente para que se vean todos los pines al tiempo
+            if (group.getLayers().length > 0) {
+                map.fitBounds(group.getBounds().pad(0.2));
+            }
 
             document.getElementById('contador-resultados').innerText = `Mostrando ${lista.length} opciones`;
         }

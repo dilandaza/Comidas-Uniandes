@@ -97,23 +97,22 @@
             <!-- PANEL DE FILTROS Y BÚSQUEDA -->
             <div class="budget-box bg-[var(--sidebar-bg)] border border-[var(--border-color)] p-5 rounded-2xl shadow-sm flex flex-wrap gap-4 items-center justify-between">
                 <div class="flex-1 min-w-[280px]">
-                    <label class="block text-xs font-semibold text-[var(--text-muted)] mb-1">Buscar restaurante o tipo de comida:</label>
-                    <input type="text" id="input-busqueda" placeholder="Ej. Corrientazo, Vegetariano, Hamburguesa..." class="w-full px-4 py-2 text-sm rounded-xl border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <label class="block text-xs font-semibold text-[var(--text-muted)] mb-1">Buscar qué comer (Ej. Almuerzo, Hamburguesa, Menú):</label>
+                    <input type="text" id="input-busqueda" placeholder="Ej. Almuerzo ejecutivo, Vegetariano..." class="w-full px-4 py-2 text-sm rounded-xl border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-emerald-500">
                 </div>
                 
                 <div>
-                    <label class="block text-xs font-semibold text-[var(--text-muted)] mb-1">Filtrar por categoría:</label>
+                    <label class="block text-xs font-semibold text-[var(--text-muted)] mb-1">Filtro rápido:</label>
                     <select id="filtro-categoria" class="px-4 py-2 text-sm rounded-xl border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                        <option value="todos">Todos los lugares</option>
-                        <option value="economico">Económicos (&lt; $15k)</option>
+                        <option value="almuerzo">Almuerzos y Menús</option>
+                        <option value="economico">Económicos</option>
                         <option value="vegetariano">Vegetariano / Saludable</option>
-                        <option value="rapido">Comida Rápida</option>
                     </select>
                 </div>
 
                 <div class="self-end">
-                    <button onclick="filtrarRestaurantes()" class="bg-slate-900 hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white px-5 py-2 rounded-xl text-sm font-medium transition shadow-sm">
-                        Filtrar Opciones
+                    <button onclick="buscarRestaurantesAPI()" class="bg-slate-900 hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white px-5 py-2 rounded-xl text-sm font-medium transition shadow-sm">
+                        Buscar en Google Maps 🔍
                     </button>
                 </div>
             </div>
@@ -122,20 +121,23 @@
             <div>
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-lg font-bold">Restaurantes recomendados cerca a la Universidad</h2>
-                    <span class="text-xs text-[var(--text-muted)]" id="contador-resultados">Mostrando opciones disponibles</span>
+                    <span class="text-xs text-[var(--text-muted)]" id="contador-resultados">Cargando opciones...</span>
                 </div>
 
                 <!-- CONTENEDOR DE TARJETAS -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="contenedor-restaurantes">
-                    <!-- Las tarjetas se cargarán aquí dinámicamente -->
+                    <!-- Se llenará dinámicamente con la API -->
                 </div>
             </div>
 
         </div>
     </main>
 
-    <!-- SCRIPT DE FUNCIONALIDAD -->
+    <!-- SCRIPT DE FUNCIONALIDAD Y CONEXIÓN CON FASTAPI -->
     <script>
+        // URL de tu backend en Render (Cámbiala por http://localhost:8000 si pruebas localmente)
+        const API_URL = "https://observatorio-obras-bogota.onrender.com";
+
         // Lógica de Modo Oscuro
         const btnConfig = document.getElementById('btn-config');
         if (localStorage.getItem('darkMode') === 'enabled') {
@@ -146,20 +148,31 @@
             localStorage.setItem('darkMode', document.body.classList.contains('dark-mode') ? 'enabled' : 'disabled');
         });
 
-        // Datos simulados de restaurantes cercanos (preparados para conectar luego con FastAPI y Google Maps API)
-        const restaurantesMock = [
-            { id: 1, nombre: "La Nena Restaurante", tipo: "Corrientazo / Casera", precio: 13000, calificacion: 4.6, distancia: "2 mins a pie", etiqueta: "economico", desc: "Platos caseros abundantes, excelente opción diaria cerca de la calle 19A." },
-            { id: 2, nombre: "El Gato Gris", tipo: "Café / Menú del día", precio: 18000, calificacion: 4.5, distancia: "5 mins a pie", etiqueta: "vegetariano", desc: "Ambiente bohemio en La Candelaria con buenas opciones vegetarianas." },
-            { id: 3, nombre: "Wok & Bowl Universitario", tipo: "Asiática / Saludable", precio: 16000, calificacion: 4.7, distancia: "4 mins a pie", etiqueta: "vegetariano", desc: "Bowls armables ideales para cuidar el presupuesto y comer saludable." },
-            { id: 4, nombre: "Rápidos del Campus", tipo: "Comida Rápida / Perros", precio: 9000, calificacion: 4.2, distancia: "1 min a pie", etiqueta: "rapido", desc: "Económico y rápido para salir del apuro entre clases seguidas." }
-        ];
+        // Función para consumir la API de FastAPI (Google Places)
+        async function buscarRestaurantesAPI() {
+            const queryInput = document.getElementById('input-busqueda').value || "almuerzo";
+            const contenedor = document.getElementById('contenedor-restaurantes');
+            
+            contenedor.innerHTML = `<div class="col-span-full text-center py-12 text-[var(--text-muted)]">⏳ Buscando los mejores lugares cerca a la universidad...</div>`;
+
+            try {
+                const response = await fetch(`${API_URL}/api/restaurantes?query=${encodeURIComponent(queryInput)}`);
+                const data = await response.json();
+
+                renderizarRestaurantes(data);
+            } catch (error) {
+                console.error("Error al conectar con la API:", error);
+                contenedor.innerHTML = `<div class="col-span-full text-center py-12 text-red-500 font-semibold">⚠️ Error de conexión con el servidor de la API. Intenta de nuevo en unos segundos.</div>`;
+            }
+        }
 
         function renderizarRestaurantes(lista) {
             const contenedor = document.getElementById('contenedor-restaurantes');
             contenedor.innerHTML = '';
 
-            if(lista.length === 0) {
-                contenedor.innerHTML = `<div class="col-span-full text-center py-12 text-[var(--text-muted)]">No se encontraron restaurantes con esos filtros.</div>`;
+            if(!lista || lista.length === 0) {
+                contenedor.innerHTML = `<div class="col-span-full text-center py-12 text-[var(--text-muted)]">No se encontraron restaurantes cercanos con ese criterio.</div>`;
+                document.getElementById('contador-resultados').innerText = `0 opciones encontradas`;
                 return;
             }
 
@@ -168,33 +181,33 @@
                     <div class="card bg-[var(--sidebar-bg)] border border-[var(--border-color)] rounded-2xl p-5 shadow-xs flex flex-col justify-between transition hover:shadow-md">
                         <div>
                             <div class="flex justify-between items-start mb-2">
-                                <h3 class="font-bold text-base">${r.nombre}</h3>
-                                <span class="bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 text-xs px-2 py-0.5 rounded-md font-semibold">⭐ ${r.calificacion}</span>
+                                <h3 class="font-bold text-base line-clamp-1">${r.nombre}</h3>
+                                <span class="bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 text-xs px-2 py-0.5 rounded-md font-semibold whitespace-nowrap">⭐ ${r.calificacion} (${r.total_reviews})</span>
                             </div>
-                            <p class="text-xs text-emerald-600 dark:text-emerald-400 font-medium mb-3">${r.tipo} • 📍 ${r.distancia}</p>
-                            <p class="text-xs text-[var(--text-muted)] mb-4">${r.desc}</p>
+                            <p class="text-xs text-emerald-600 dark:text-emerald-400 font-medium mb-2">📍 ${r.direccion}</p>
+                            <p class="text-xs text-[var(--text-muted)] mb-4">Estado: ${r.abierto ? '🟢 Abierto' : '🔴 Cerrado'}</p>
                         </div>
                         <div class="pt-4 border-t border-[var(--border-color)] flex items-center justify-between">
                             <div>
-                                <span class="text-[10px] text-[var(--text-muted)] block">Precio aprox:</span>
-                                <span class="font-bold text-sm">$${r.precio.toLocaleString()} COP</span>
+                                <span class="text-[10px] text-[var(--text-muted)] block">Costo estimado:</span>
+                                <span class="font-bold text-sm">$${r.precio_aprox.toLocaleString()} COP</span>
                             </div>
-                            <button onclick="registrarGasto(${r.precio}, '${r.nombre}')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-4 py-2 rounded-xl font-medium transition shadow-sm">
+                            <button onclick="registrarGasto(${r.precio_aprox}, '${r.nombre.replace(/'/g, "")}')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-4 py-2 rounded-xl font-medium transition shadow-sm">
                                 Registrar Gasto 💸
                             </button>
                         </div>
                     </div>
                 `;
             });
-            document.getElementById('contador-resultados').innerText = `Mostrando ${lista.length} opciones`;
+            document.getElementById('contador-resultados').innerText = `Mostrando ${lista.length} opciones reales`;
         }
 
-        // Simulación de control de presupuesto
+        // Control de Presupuesto
         let saldoActual = 500000;
 
         function registrarGasto(monto, nombreRestaurante) {
             if (saldoActual - monto < 0) {
-                alert("⚠️ ¡Cuidado! Este gasto supera tu presupuesto disponible.");
+                alert("⚠️ ¡Cuidado! Este gasto supera tu presupuesto disponible para el mes.");
                 return;
             }
             saldoActual -= monto;
@@ -210,21 +223,10 @@
             }
         }
 
-        function filtrarRestaurantes() {
-            const texto = document.getElementById('input-busqueda').value.toLowerCase();
-            const categoria = document.getElementById('filtro-categoria').value;
-
-            const filtrados = restaurantesMock.filter(r => {
-                const coincideTexto = r.nombre.toLowerCase().includes(texto) || r.tipo.toLowerCase().includes(texto);
-                const coincideCategoria = categoria === 'todos' || r.etiqueta === categoria;
-                return coincideTexto && coincideCategoria;
-            });
-
-            renderizarRestaurantes(filtrados);
-        }
-
-        // Cargar inicial
-        renderizarRestaurantes(restaurantesMock);
+        // Carga inicial automática al abrir la página
+        window.onload = () => {
+            buscarRestaurantesAPI();
+        };
     </script>
 </body>
 </html>

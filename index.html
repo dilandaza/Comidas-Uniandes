@@ -3,538 +3,228 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Transparencia SECOP - Bogotá</title>
+    <title>BolsilloU - Presupuesto y Comida Cerca al Campus</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* ==========================================
-           MODO OSCURO (DARK MODE)
-           ========================================== */
+        :root {
+            --bg-color: #f8fafc;
+            --sidebar-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --card-bg: #ffffff;
+            --primary: #10b981;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        /* Modo Oscuro */
         body.dark-mode {
             --bg-color: #0f172a;
             --sidebar-bg: #1e293b;
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
             --border-color: #334155;
+            --card-bg: #1e293b;
         }
 
-        body.dark-mode .search-container,
         body.dark-mode .card,
-        body.dark-mode .card-localidad {
-            background-color: #1e293b;
+        body.dark-mode .search-container,
+        body.dark-mode .budget-box {
+            background-color: var(--card-bg);
             color: var(--text-main);
+            border-color: var(--border-color);
         }
 
-        body.dark-mode .search-input {
-            background-color: transparent;
+        body.dark-mode input, body.dark-mode select {
+            background-color: #0f172a;
             color: var(--text-main);
-        }
-
-        body.dark-mode .empty-state {
-            background-color: #1e293b;
-            color: var(--text-muted);
-            border-color: #334155;
-        }
-
-        body.dark-mode .sidebar-icon {
-            background-color: #334155;
-            color: #cbd5e1;
-        }
-
-        body.dark-mode .sidebar-icon:hover {
-            background-color: #475569;
-        }
-        :root {
-            --bg-color: #f8fafc;
-            --sidebar-bg: #ffffff;
-            --bogota-red: #e31837; 
-            --bogota-yellow: #ffd100;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
-            --border-color: #e2e8f0;
-        }
-
-        body {
-            margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            display: flex;
-            height: 100vh;
-            color: var(--text-main);
-        }
-
-        /* Menú lateral */
-        .sidebar {
-            width: 60px;
-            background-color: var(--sidebar-bg);
-            border-right: 1px solid var(--border-color);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding-top: 20px;
-            gap: 20px;
+            border-color: var(--border-color);
         }
 
         .sidebar-icon {
-            width: 35px;
-            height: 35px;
-            border-radius: 8px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: #f1f5f9;
-            color: var(--text-muted);
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.2s;
+            transition: all 0.2s ease;
         }
-
         .sidebar-icon:hover {
             background-color: #e2e8f0;
         }
-
-        .sidebar-icon.active {
-            background-color: var(--bogota-red);
-            color: white;
-            box-shadow: 2px 2px 0px var(--bogota-yellow);
-        }
-
-        /* Contenedor principal */
-        .main-content {
-            flex: 1;
-            padding: 30px 40px;
-            overflow-y: auto;
-        }
-
-        .header {
-            margin-bottom: 30px;
-        }
-
-        .date {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 5px;
-        }
-
-        .greeting {
-            font-size: 1.5rem;
-            font-weight: bold;
-            margin: 0 0 5px 0;
-        }
-
-        .subtitle {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-            margin: 0;
-        }
-
-        .subtitle span {
-            color: var(--bogota-red); 
-            font-weight: 600;
-        }
-
-        /* Buscador central */
-        .search-container {
-            background-color: white;
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 15px 20px;
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            transition: border-color 0.2s;
-        }
-        
-        .search-container:focus-within {
-            border-color: var(--bogota-red);
-        }
-
-        .search-icon {
-            color: var(--bogota-red);
-            margin-right: 15px;
-            font-size: 1.2rem;
-        }
-
-        .search-input {
-            flex: 1;
-            border: none;
-            outline: none;
-            font-size: 1rem;
-            color: var(--text-main);
-        }
-
-        .search-btn {
-            background-color: var(--bogota-red);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            width: 35px;
-            height: 35px;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: background-color 0.2s;
-        }
-        
-        .search-btn:hover {
-            background-color: #c0142d;
-        }
-
-        /* Vistas dinámicas */
-        .hidden {
-            display: none !important;
-        }
-
-        .section-title {
-            font-size: 1.1rem;
-            font-weight: bold;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 15px;
-        }
-
-        /* Tarjetas de Localidades */
-        .card-localidad {
-            background-color: white;
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 15px 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-left: 4px solid transparent;
-        }
-
-        .card-localidad:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            border-color: var(--bogota-red);
-            border-left: 4px solid var(--bogota-yellow);
-        }
-
-        .localidad-info h3 {
-            margin: 0;
-            font-size: 1rem;
-        }
-
-        .arrow-icon {
-            color: var(--bogota-red);
-            font-size: 1.2rem;
-            transition: transform 0.2s;
-        }
-        
-        .card-localidad:hover .arrow-icon {
-            transform: translateX(3px);
-        }
-
-        /* Tarjetas de Obras (Inyectadas) */
-        .card {
-            background-color: white;
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-        }
-
-        .card-category {
-            font-size: 0.75rem;
-            background-color: #e0f2fe;
-            color: #0369a1;
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-weight: 500;
-        }
-
-        .card-status {
-            font-size: 0.75rem;
-            color: #16a34a;
-            font-weight: 500;
-        }
-
-        .card-title {
-            font-size: 1rem;
-            font-weight: 600;
-            margin: 0 0 10px 0;
-            line-height: 1.4;
-        }
-
-        .card-entity {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            margin-bottom: 15px;
-            flex-grow: 1;
-        }
-
-        .card-footer {
-            border-top: 1px solid var(--border-color);
-            padding-top: 15px;
-            font-size: 0.9rem;
-        }
-
-        .card-value {
-            font-weight: bold;
-            color: var(--text-main);
-        }
-
-        /* Botón volver */
-        .btn-volver {
-            background: none;
-            border: none;
-            color: var(--bogota-red);
-            cursor: pointer;
-            font-size: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            padding: 0;
-            margin-bottom: 20px;
-            font-weight: 600;
-        }
-
-        .btn-volver:hover {
-            text-decoration: underline;
-        }
-
-        /* Estado vacío */
-        .empty-state {
-            text-align: center;
-            padding: 50px 20px;
-            background-color: white;
-            border: 2px dashed var(--border-color);
-            border-radius: 12px;
-            color: var(--text-muted);
-            margin-top: 20px;
-        }
-
-        #nombre-localidad-titulo {
-            margin-left: 5px; 
-            color: var(--bogota-red);
+        body.dark-mode .sidebar-icon:hover {
+            background-color: #334155;
         }
     </style>
 </head>
-<body>
+<body class="flex h-screen overflow-hidden">
 
-    <aside class="sidebar">
-        <div class="sidebar-icon active">D</div>
-        <div class="sidebar-icon">⊞</div>
-        <div class="sidebar-icon">⚑</div>
-        <div class="sidebar-icon">⚙</div>
-        <div class="sidebar-icon" id="btn-config" title="Cambiar modo oscuro/claro">⚙</div>
+    <!-- BARRA LATERAL -->
+    <aside class="w-20 bg-[var(--sidebar-bg)] border-r border-[var(--border-color)] flex flex-col items-center py-6 justify-between z-10 shadow-sm">
+        <div class="flex flex-col items-center gap-6">
+            <div class="w-10 h-10 bg-emerald-600 text-white font-bold rounded-xl flex items-center justify-center text-lg shadow-md">U</div>
+            <div class="sidebar-icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-xl" title="Inicio">🍽️</div>
+            <div class="sidebar-icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-xl" title="Mapa de Restaurantes">🗺️</div>
+            <div class="sidebar-icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-xl" title="Favoritos">⭐</div>
+        </div>
+        <div class="sidebar-icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-xl" id="btn-config" title="Cambiar modo oscuro/claro">⚙️</div>
     </aside>
 
-    <main class="main-content">
-        <header class="header">
-            <!-- Logo creado con código -->
-            <div style="display: flex; align-items: flex-start; margin-bottom: 20px; user-select: none;">
-                <h1 style="color: var(--bogota-red); font-size: 45px; font-weight: 900; margin: 0; letter-spacing: -2px; font-family: 'Arial Black', Impact, sans-serif;">BOGOTΛ</h1>
-                <div style="color: var(--bogota-yellow); font-size: 20px; margin-left: 2px; line-height: 1;">
-                    <span style="display: inline-block; transform: rotate(-20deg) translateX(-5px);">★</span>
-                    <span style="display: inline-block; transform: translateY(-12px) translateX(-5px) scale(1.3);">★</span>
-                </div>
+    <!-- CONTENEDOR PRINCIPAL -->
+    <main class="flex-1 flex flex-col h-full overflow-y-auto">
+        
+        <!-- HEADER SUPERIOR -->
+        <header class="bg-[var(--sidebar-bg)] border-b border-[var(--border-color)] px-8 py-4 flex justify-between items-center shadow-xs">
+            <div>
+                <h1 class="text-xl font-bold">BolsilloU - Alimentación Inteligente</h1>
+                <p class="text-xs text-[var(--text-muted)]">Gestiona tu presupuesto y descubre dónde comer cerca al campus</p>
             </div>
             
-            <div class="date">MARTES, 22 DE SEPTIEMBRE</div>
-            <h1 class="greeting">Hola, Ciudadano.</h1>
-            <p class="subtitle">Estás explorando la <span>contratación pública de Bogotá</span>.</p>
+            <!-- Resumen de Presupuesto Rápido -->
+            <div class="flex items-center gap-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-4 py-2 rounded-xl">
+                <div>
+                    <p class="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold uppercase">Presupuesto Disponible</p>
+                    <p class="text-lg font-black text-emerald-800 dark:text-emerald-300" id="lbl-saldo-actual">$500.000 COP</p>
+                </div>
+                <button onclick="abrirConfigPresupuesto()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1.5 rounded-lg font-medium transition">Ajustar</button>
+            </div>
         </header>
 
-        <div class="search-container">
-            <div class="search-icon">✦</div>
-            <input type="text" class="search-input" placeholder="Buscar localidades, entidades...">
-            <button class="search-btn">→</button>
-        </div>
+        <!-- CUERPO DE LA APP -->
+        <div class="p-8 max-w-7xl mx-auto w-full flex flex-col gap-6">
 
-        <!-- VISTA 1: Lista de Localidades -->
-        <div id="vista-localidades">
-            <div class="section-title">
-                <span>📍</span> Selecciona una Localidad
-            </div>
-            
-            <div class="grid-container">
-                <!-- BOTÓN ESPECIAL DEL METRO -->
-                <div class="card-localidad" onclick="mostrarObras('Metro')" style="grid-column: 1 / -1; border-color: #0369a1; background-color: #f0f9ff; margin-bottom: 10px;">
-                    <div class="localidad-info">
-                        <h3 style="color: #0369a1; font-size: 1.2rem;">🚇 Mega Obras: Metro de Bogotá</h3>
-                        <p style="color: #0284c7; margin-top: 5px; font-size: 0.85rem;">Consulta contratos de construcción, interventoría y traslado de redes.</p>
-                    </div>
-                    <div class="arrow-icon" style="color: #0369a1;">→</div>
+            <!-- PANEL DE FILTROS Y BÚSQUEDA -->
+            <div class="budget-box bg-[var(--sidebar-bg)] border border-[var(--border-color)] p-5 rounded-2xl shadow-sm flex flex-wrap gap-4 items-center justify-between">
+                <div class="flex-1 min-w-[280px]">
+                    <label class="block text-xs font-semibold text-[var(--text-muted)] mb-1">Buscar restaurante o tipo de comida:</label>
+                    <input type="text" id="input-busqueda" placeholder="Ej. Corrientazo, Vegetariano, Hamburguesa..." class="w-full px-4 py-2 text-sm rounded-xl border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-emerald-500">
                 </div>
-                <div class="card-localidad" onclick="mostrarObras('Usaquén')"><div class="localidad-info"><h3>Usaquén</h3></div><div class="arrow-icon">→</div></div>
-                <div class="card-localidad" onclick="mostrarObras('Chapinero')"><div class="localidad-info"><h3>Chapinero</h3></div><div class="arrow-icon">→</div></div>
-                <div class="card-localidad" onclick="mostrarObras('Santa Fe')"><div class="localidad-info"><h3>Santa Fe</h3></div><div class="arrow-icon">→</div></div>
-                <div class="card-localidad" onclick="mostrarObras('San Cristóbal')"><div class="localidad-info"><h3>San Cristóbal</h3></div><div class="arrow-icon">→</div></div>
-                <div class="card-localidad" onclick="mostrarObras('Usme')"><div class="localidad-info"><h3>Usme</h3></div><div class="arrow-icon">→</div></div>
-                <div class="card-localidad" onclick="mostrarObras('Tunjuelito')"><div class="localidad-info"><h3>Tunjuelito</h3></div><div class="arrow-icon">→</div></div>
-                <div class="card-localidad" onclick="mostrarObras('Bosa')"><div class="localidad-info"><h3>Bosa</h3></div><div class="arrow-icon">→</div></div>
-                <div class="card-localidad" onclick="mostrarObras('Kennedy')"><div class="localidad-info"><h3>Kennedy</h3></div><div class="arrow-icon">→</div></div>
-                <div class="card-localidad" onclick="mostrarObras('Fontibón')"><div class="localidad-info"><h3>Fontibón</h3></div><div class="arrow-icon">→</div></div>
-                <div class="card-localidad" onclick="mostrarObras('Engativá')"><div class="localidad-info"><h3>Engativá</h3></div><div class="arrow-icon">→</div></div>
-                <div class="card-localidad" onclick="mostrarObras('Suba')"><div class="localidad-info"><h3>Suba</h3></div><div class="arrow-icon">→</div></div>
-                <div class="card-localidad" onclick="mostrarObras('Barrios Unidos')"><div class="localidad-info"><h3>Barrios Unidos</h3></div><div class="arrow-icon">→</div></div>
-                <div class="card-localidad" onclick="mostrarObras('Teusaquillo')"><div class="localidad-info"><h3>Teusaquillo</h3></div><div class="arrow-icon">→</div></div>
-                <div class="card-localidad" onclick="mostrarObras('Los Mártires')"><div class="localidad-info"><h3>Los Mártires</h3></div><div class="arrow-icon">→</div></div>
-                <div class="card-localidad" onclick="mostrarObras('Antonio Nariño')"><div class="localidad-info"><h3>Antonio Nariño</h3></div><div class="arrow-icon">→</div></div>
-                <div class="card-localidad" onclick="mostrarObras('Puente Aranda')"><div class="localidad-info"><h3>Puente Aranda</h3></div><div class="arrow-icon">→</div></div>
-                <div class="card-localidad" onclick="mostrarObras('La Candelaria')"><div class="localidad-info"><h3>La Candelaria</h3></div><div class="arrow-icon">→</div></div>
-                <div class="card-localidad" onclick="mostrarObras('Rafael Uribe Uribe')"><div class="localidad-info"><h3>Rafael Uribe Uribe</h3></div><div class="arrow-icon">→</div></div>
-                <div class="card-localidad" onclick="mostrarObras('Ciudad Bolívar')"><div class="localidad-info"><h3>Ciudad Bolívar</h3></div><div class="arrow-icon">→</div></div>
-                <div class="card-localidad" onclick="mostrarObras('Sumapaz')"><div class="localidad-info"><h3>Sumapaz</h3></div><div class="arrow-icon">→</div></div>
-            </div>
-        </div>
+                
+                <div>
+                    <label class="block text-xs font-semibold text-[var(--text-muted)] mb-1">Filtrar por categoría:</label>
+                    <select id="filtro-categoria" class="px-4 py-2 text-sm rounded-xl border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <option value="todos">Todos los lugares</option>
+                        <option value="economico">Económicos (&lt; $15k)</option>
+                        <option value="vegetariano">Vegetariano / Saludable</option>
+                        <option value="rapido">Comida Rápida</option>
+                    </select>
+                </div>
 
-        <!-- VISTA 2: Obras -->
-        <div id="vista-obras" class="hidden">
-            <button class="btn-volver" onclick="volverLocalidades()">← Volver a Localidades</button>
-            
-            <div class="section-title">
-                <span>🚧</span> Obras en curso: <span id="nombre-localidad-titulo"></span>
+                <div class="self-end">
+                    <button onclick="filtrarRestaurantes()" class="bg-slate-900 hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white px-5 py-2 rounded-xl text-sm font-medium transition shadow-sm">
+                        Filtrar Opciones
+                    </button>
+                </div>
             </div>
-            
-            <!-- Aquí se inyectarán los datos de la API -->
-            <div id="contenedor-datos" class="grid-container">
-                <!-- Por defecto empieza vacío, JavaScript lo llenará -->
-            </div>
-        </div>
 
+            <!-- SECCIÓN DE RECOMENDACIONES -->
+            <div>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-lg font-bold">Restaurantes recomendados cerca a la Universidad</h2>
+                    <span class="text-xs text-[var(--text-muted)]" id="contador-resultados">Mostrando opciones disponibles</span>
+                </div>
+
+                <!-- CONTENEDOR DE TARJETAS -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="contenedor-restaurantes">
+                    <!-- Las tarjetas se cargarán aquí dinámicamente -->
+                </div>
+            </div>
+
+        </div>
     </main>
 
-    <!-- ESTE ES EL SEGUNDO CÓDIGO (JavaScript) -->
-    <!-- SCRIPT ACTUALIZADO Y COMPLETO -->
+    <!-- SCRIPT DE FUNCIONALIDAD -->
     <script>
-        function mostrarObras(nombreLocalidad) {
-            // Cambiar de pantalla
-            document.getElementById('vista-localidades').classList.add('hidden');
-            document.getElementById('vista-obras').classList.remove('hidden');
-            document.getElementById('nombre-localidad-titulo').innerText = nombreLocalidad;
-            
-            const contenedor = document.getElementById('contenedor-datos');
-            
-            // Mensaje de carga mientras espera a tu API de Python
-            contenedor.innerHTML = `
-                <div class="empty-state" style="grid-column: 1 / -1;">
-                    <span style="font-size: 2rem;">⏳</span>
-                    <h3>Buscando contratos en Datos Abiertos...</h3>
-                </div>`;
-            
-            // Llama a tu API en Python
-            fetch(`https://observatorio-obras-bogota.onrender.com/api/obras/${encodeURIComponent(nombreLocalidad)}`)
-                .then(response => response.json())
-                .then(datos => {
-                    contenedor.innerHTML = ''; // Limpiamos el mensaje de carga
-                    
-                    if(!datos || datos.length === 0) {
-                        contenedor.innerHTML = `
-                            <div class="empty-state" style="grid-column: 1 / -1;">
-                                <h3>No se encontraron contratos con la palabra "${nombreLocalidad}"</h3>
-                            </div>`;
-                        return;
-                    }
-                    
-                    // Crea las tarjetas por cada contrato
-                    datos.forEach(obra => {
-                        let valorFormateado = "No especificado";
-                        if(obra.valor !== "0" && !isNaN(obra.valor)) {
-                            valorFormateado = "$ " + Number(obra.valor).toLocaleString('es-CO') + " COP";
-                        } else if (obra.valor && obra.valor !== "0") {
-                            valorFormateado = "$ " + obra.valor + " COP";
-                        }
-
-                        const tarjeta = `
-                            <div class="card">
-                                <div class="card-header">
-                                    <span class="card-category">Proceso SECOP</span>
-                                    <span class="card-status">✓ ${obra.estado}</span>
-                                </div>
-                                <h3 class="card-title">${obra.titulo}</h3>
-                                <div class="card-entity">${obra.entidad}</div>
-                                <div class="card-footer">
-                                    <span class="card-value">${valorFormateado}</span>
-                                </div>
-                            </div>
-                        `;
-                        contenedor.innerHTML += tarjeta;
-                    });
-                })
-                .catch(error => {
-                    console.error("Error:", error);
-                    contenedor.innerHTML = `
-                        <div class="empty-state" style="grid-column: 1 / -1; color: var(--bogota-red);">
-                            <span style="font-size: 2rem;">⚠️</span>
-                            <h3>Error de conexión</h3>
-                            <p>Asegúrate de que la terminal con Python (uvicorn main:app --reload) esté encendida.</p>
-                        </div>`;
-                });
-        }
-
-        function volverLocalidades() {
-            document.getElementById('vista-obras').classList.add('hidden');
-            document.getElementById('vista-localidades').classList.remove('hidden');
-        }
-
-        // ==========================================
-        // NUEVO: LÓGICA DE LA BARRA DE BÚSQUEDA CENTRAL
-        // ==========================================
-        function ejecutarBusqueda() {
-            const input = document.querySelector('.search-input');
-            const textoBusqueda = input.value.trim();
-            
-            if (textoBusqueda !== "") {
-                mostrarObras(textoBusqueda);
-            } else {
-                alert("Por favor escribe una localidad o término a buscar.");
-            }
-        }
-
-        // Conectar el botón de la flecha (→)
-        document.querySelector('.search-btn').addEventListener('click', ejecutarBusqueda);
-
-        // Conectar la tecla "Enter" dentro del input de búsqueda
-        document.querySelector('.search-input').addEventListener('keypress', function(event) {
-            if (event.key === 'Enter') {
-                ejecutarBusqueda();
-            }
-        });
+        // Lógica de Modo Oscuro
         const btnConfig = document.getElementById('btn-config');
-        
-        // Revisar si el usuario ya tenía el modo oscuro activado anteriormente
         if (localStorage.getItem('darkMode') === 'enabled') {
             document.body.classList.add('dark-mode');
         }
-
         btnConfig.addEventListener('click', () => {
             document.body.classList.toggle('dark-mode');
-            
-            // Guardar la preferencia en el navegador
-            if (document.body.classList.contains('dark-mode')) {
-                localStorage.setItem('darkMode', 'enabled');
-            } else {
-                localStorage.setItem('darkMode', 'disabled');
-            }
+            localStorage.setItem('darkMode', document.body.classList.contains('dark-mode') ? 'enabled' : 'disabled');
         });
+
+        // Datos simulados de restaurantes cercanos (preparados para conectar luego con FastAPI y Google Maps API)
+        const restaurantesMock = [
+            { id: 1, nombre: "La Nena Restaurante", tipo: "Corrientazo / Casera", precio: 13000, calificacion: 4.6, distancia: "2 mins a pie", etiqueta: "economico", desc: "Platos caseros abundantes, excelente opción diaria cerca de la calle 19A." },
+            { id: 2, nombre: "El Gato Gris", tipo: "Café / Menú del día", precio: 18000, calificacion: 4.5, distancia: "5 mins a pie", etiqueta: "vegetariano", desc: "Ambiente bohemio en La Candelaria con buenas opciones vegetarianas." },
+            { id: 3, nombre: "Wok & Bowl Universitario", tipo: "Asiática / Saludable", precio: 16000, calificacion: 4.7, distancia: "4 mins a pie", etiqueta: "vegetariano", desc: "Bowls armables ideales para cuidar el presupuesto y comer saludable." },
+            { id: 4, nombre: "Rápidos del Campus", tipo: "Comida Rápida / Perros", precio: 9000, calificacion: 4.2, distancia: "1 min a pie", etiqueta: "rapido", desc: "Económico y rápido para salir del apuro entre clases seguidas." }
+        ];
+
+        function renderizarRestaurantes(lista) {
+            const contenedor = document.getElementById('contenedor-restaurantes');
+            contenedor.innerHTML = '';
+
+            if(lista.length === 0) {
+                contenedor.innerHTML = `<div class="col-span-full text-center py-12 text-[var(--text-muted)]">No se encontraron restaurantes con esos filtros.</div>`;
+                return;
+            }
+
+            lista.forEach(r => {
+                contenedor.innerHTML += `
+                    <div class="card bg-[var(--sidebar-bg)] border border-[var(--border-color)] rounded-2xl p-5 shadow-xs flex flex-col justify-between transition hover:shadow-md">
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="font-bold text-base">${r.nombre}</h3>
+                                <span class="bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 text-xs px-2 py-0.5 rounded-md font-semibold">⭐ ${r.calificacion}</span>
+                            </div>
+                            <p class="text-xs text-emerald-600 dark:text-emerald-400 font-medium mb-3">${r.tipo} • 📍 ${r.distancia}</p>
+                            <p class="text-xs text-[var(--text-muted)] mb-4">${r.desc}</p>
+                        </div>
+                        <div class="pt-4 border-t border-[var(--border-color)] flex items-center justify-between">
+                            <div>
+                                <span class="text-[10px] text-[var(--text-muted)] block">Precio aprox:</span>
+                                <span class="font-bold text-sm">$${r.precio.toLocaleString()} COP</span>
+                            </div>
+                            <button onclick="registrarGasto(${r.precio}, '${r.nombre}')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-4 py-2 rounded-xl font-medium transition shadow-sm">
+                                Registrar Gasto 💸
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('contador-resultados').innerText = `Mostrando ${lista.length} opciones`;
+        }
+
+        // Simulación de control de presupuesto
+        let saldoActual = 500000;
+
+        function registrarGasto(monto, nombreRestaurante) {
+            if (saldoActual - monto < 0) {
+                alert("⚠️ ¡Cuidado! Este gasto supera tu presupuesto disponible.");
+                return;
+            }
+            saldoActual -= monto;
+            document.getElementById('lbl-saldo-actual').innerText = `$${saldoActual.toLocaleString()} COP`;
+            alert(`✅ Gasto de $${monto.toLocaleString()} registrado en ${nombreRestaurante}. ¡Buen provecho!`);
+        }
+
+        function abrirConfigPresupuesto() {
+            let nuevoPresupuesto = prompt("Ingresa tu presupuesto mensual de alimentación (COP):", saldoActual);
+            if (nuevoPresupuesto && !isNaN(nuevoPresupuesto)) {
+                saldoActual = parseInt(nuevoPresupuesto);
+                document.getElementById('lbl-saldo-actual').innerText = `$${saldoActual.toLocaleString()} COP`;
+            }
+        }
+
+        function filtrarRestaurantes() {
+            const texto = document.getElementById('input-busqueda').value.toLowerCase();
+            const categoria = document.getElementById('filtro-categoria').value;
+
+            const filtrados = restaurantesMock.filter(r => {
+                const coincideTexto = r.nombre.toLowerCase().includes(texto) || r.tipo.toLowerCase().includes(texto);
+                const coincideCategoria = categoria === 'todos' || r.etiqueta === categoria;
+                return coincideTexto && coincideCategoria;
+            });
+
+            renderizarRestaurantes(filtrados);
+        }
+
+        // Cargar inicial
+        renderizarRestaurantes(restaurantesMock);
     </script>
 </body>
 </html>
-
-
-
-

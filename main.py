@@ -1,12 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import requests
 import os
 
 app = FastAPI(
     title="BolsilloU API",
-    description="Backend con coordenadas reales de Google Places",
-    version="1.0.5"
+    description="Backend con detalles de platos y precios para BolsilloU",
+    version="1.0.6"
 )
 
 app.add_middleware(
@@ -17,121 +16,106 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-
-RESTAURANTES_RESPALDO = [
+# Lista completa con platos detallados para cada restaurante cerca a UniAndes
+RESTAURANTES_CON_PLATOS = [
     {
         "nombre": "La Nena Restaurante",
         "direccion": "Calle 19A # 1-28, Bogotá (Cerca a UniAndes)",
         "calificacion": 4.6,
         "total_reviews": 128,
-        "precio_aprox": 13000,
         "id_lugar": "fallback_1",
         "abierto": True,
         "lat": 4.6025,
-        "lng": -74.0665
+        "lng": -74.0665,
+        "platos": [
+            {
+                "nombre": "Menú Ejecutivo de Pollo",
+                "precio": 13000,
+                "descripcion": "Incluye sopa del día, pechuga a la plancha, arroz, frijol, ensalada y bebida."
+            },
+            {
+                "nombre": "Sobrebarriga en Salsa",
+                "precio": 15000,
+                "descripcion": "Carne tierna en salsa criolla con yuca, papa cocida, arroz y arepa."
+            }
+        ]
     },
     {
         "nombre": "El Gato Gris",
         "direccion": "Cra. 2 # 12-40, La Candelaria, Bogotá",
         "calificacion": 4.5,
         "total_reviews": 310,
-        "precio_aprox": 18000,
         "id_lugar": "fallback_2",
         "abierto": True,
         "lat": 4.5985,
-        "lng": -74.0705
+        "lng": -74.0705,
+        "platos": [
+            {
+                "nombre": "Bowl Vegano de la Casa",
+                "precio": 18000,
+                "descripcion": "Base de quinua, falafel de garbanzo, aguacate, tomates cherry y aderezo de tahini."
+            },
+            {
+                "nombre": "Crepes de Espinaca y Queso",
+                "precio": 16000,
+                "descripcion": "Masa artesanal rellena de espinacas salteadas, ricotta y gratinado con queso mozzarella."
+            }
+        ]
     },
     {
         "nombre": "Wok & Bowl Universitario",
         "direccion": "Calle 20 # 2-30, Bogotá",
         "calificacion": 4.7,
         "total_reviews": 95,
-        "precio_aprox": 16000,
         "id_lugar": "fallback_3",
         "abierto": True,
         "lat": 4.6015,
-        "lng": -74.0650
+        "lng": -74.0650,
+        "platos": [
+            {
+                "nombre": "Teriyaki Bowl de Pollo",
+                "precio": 16000,
+                "descripcion": "Arroz jaspeado, trozos de pollo glaseados en salsa teriyaki, vegetales salteados y ajonjolí."
+            },
+            {
+                "nombre": "Bowl Vegetariano de Tofu",
+                "precio": 15000,
+                "descripcion": "Tofú crocante marinado, edamame, zanahoria, pepino y base de arroz integral."
+            }
+        ]
     },
     {
         "nombre": "Rápidos del Campus",
         "direccion": "Cra. 1 Este # 18A-12, Bogotá",
         "calificacion": 4.2,
         "total_reviews": 64,
-        "precio_aprox": 9000,
         "id_lugar": "fallback_4",
         "abierto": True,
         "lat": 4.6020,
-        "lng": -74.0640
+        "lng": -74.0640,
+        "platos": [
+            {
+                "nombre": "Perro Caliente Universitario",
+                "precio": 9000,
+                "descripcion": "Salchicha premium, queso fundido, papa fosforito y salsas de la casa."
+            },
+            {
+                "nombre": "Salchipapa Express",
+                "precio": 11000,
+                "descripcion": "Papas a la francesa doradas, trozos de salchicha ranchera y queso costeño rallado."
+            }
+        ]
     }
 ]
 
 @app.get("/")
 def ruta_raiz():
-    return {"mensaje": "¡BolsilloU API con coordenadas reales activa!"}
+    return {"mensaje": "¡BolsilloU API con platos y menús activos!"}
 
 @app.get("/api/restaurantes")
 def obtener_restaurantes(query: str = "almuerzo"):
-    if not GOOGLE_API_KEY:
-        return RESTAURANTES_RESPALDO
-
-    url = "https://places.googleapis.com/v1/places:searchText"
+    if query and query != "almuerzo":
+        filtrados = [r for r in RESTAURANTES_CON_PLATOS if query.lower() in r["nombre"].lower() or any(query.lower() in p["nombre"].lower() for p in r["platos"])]
+        return filtrados if filtrados else RESTAURANTES_CON_PLATOS
     
-    headers = {
-        "Content-Type": "application/json",
-        "X-Goog-Api-Key": GOOGLE_API_KEY,
-        "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.priceLevel,places.id,places.businessStatus,places.location"
-    }
-
-    body = {
-        "textQuery": f"{query} cerca a Universidad de los Andes Bogota",
-        "locationBias": {
-            "circle": {
-                "center": {
-                    "latitude": 4.6017,
-                    "longitude": -74.0662
-                },
-                "radius": 1500.0
-            }
-        },
-        "languageCode": "es"
-    }
-
-    try:
-        response = requests.post(url, json=body, headers=headers)
-        
-        if response.status_code == 200:
-            data = response.json()
-            places = data.get("places", [])
-            
-            if places:
-                resultados_reales = []
-                for place in places:
-                    price_str = place.get("priceLevel", "PRICE_LEVEL_MODERATE")
-                    multiplicador = 1 if "INEXPENSIVE" in price_str else (2 if "MODERATE" in price_str else 3)
-                    precio_estimado = multiplicador * 6000 + 7000
-
-                    nombre_lugar = place.get("displayName", {}).get("text", "Restaurante cercano")
-                    
-                    # Extraemos las coordenadas reales devueltas por Google Maps
-                    location = place.get("location", {})
-                    lat = location.get("latitude", 4.6017)
-                    lng = location.get("longitude", -74.0662)
-                    
-                    resultados_reales.append({
-                        "nombre": nombre_lugar,
-                        "direccion": place.get("formattedAddress", "Cerca al campus universitario"),
-                        "calificacion": place.get("rating", 4.3),
-                        "total_reviews": place.get("userRatingCount", 12),
-                        "precio_aprox": precio_estimado,
-                        "id_lugar": place.get("id"),
-                        "abierto": place.get("businessStatus", "OPERATIONAL") == "OPERATIONAL",
-                        "lat": lat,
-                        "lng": lng
-                    })
-                return resultados_reales
-                
-    except Exception:
-        pass
-
-    return RESTAURANTES_RESPALDO
+    return RESTAURANTES_CON_PLATOS

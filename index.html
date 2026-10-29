@@ -3,9 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BolsilloU - Presupuesto y Comida Cerca al Campus</title>
+    <title>BolsilloU - Presupuesto y Mapa de Restaurantes</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Leaflet CSS para el Mapa -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         :root {
             --bg-color: #f8fafc;
@@ -14,7 +16,6 @@
             --text-muted: #64748b;
             --border-color: #e2e8f0;
             --card-bg: #ffffff;
-            --primary: #10b981;
         }
 
         body {
@@ -56,6 +57,13 @@
         body.dark-mode .sidebar-icon:hover {
             background-color: #334155;
         }
+
+        #map {
+            height: 320px;
+            width: 100%;
+            border-radius: 1rem;
+            z-index: 1;
+        }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden">
@@ -65,7 +73,7 @@
         <div class="flex flex-col items-center gap-6">
             <div class="w-10 h-10 bg-emerald-600 text-white font-bold rounded-xl flex items-center justify-center text-lg shadow-md">U</div>
             <div class="sidebar-icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-xl" title="Inicio">🍽️</div>
-            <div class="sidebar-icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-xl" title="Mapa de Restaurantes">🗺️</div>
+            <div class="sidebar-icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-xl" title="Mapa">🗺️</div>
             <div class="sidebar-icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-xl" title="Favoritos">⭐</div>
         </div>
         <div class="sidebar-icon w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-xl" id="btn-config" title="Cambiar modo oscuro/claro">⚙️</div>
@@ -78,10 +86,10 @@
         <header class="bg-[var(--sidebar-bg)] border-b border-[var(--border-color)] px-8 py-4 flex justify-between items-center shadow-xs">
             <div>
                 <h1 class="text-xl font-bold">BolsilloU - Alimentación Inteligente</h1>
-                <p class="text-xs text-[var(--text-muted)]">Gestiona tu presupuesto y descubre dónde comer cerca al campus</p>
+                <p class="text-xs text-[var(--text-muted)]">Gestiona tu presupuesto y encuentra opciones en el mapa cerca a UniAndes</p>
             </div>
             
-            <!-- Resumen de Presupuesto Rápido -->
+            <!-- Resumen de Presupuesto -->
             <div class="flex items-center gap-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-4 py-2 rounded-xl">
                 <div>
                     <p class="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold uppercase">Presupuesto Disponible</p>
@@ -94,51 +102,60 @@
         <!-- CUERPO DE LA APP -->
         <div class="p-8 max-w-7xl mx-auto w-full flex flex-col gap-6">
 
-            <!-- PANEL DE FILTROS Y BÚSQUEDA -->
+            <!-- SECCIÓN DEL MAPA INTERACTIVO -->
+            <div class="budget-box bg-[var(--sidebar-bg)] border border-[var(--border-color)] p-4 rounded-2xl shadow-sm">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-sm font-bold flex items-center gap-2">🗺️ Mapa de ubicación cerca a la Universidad de los Andes</h2>
+                    <span class="text-xs text-[var(--text-muted)]">Coordenadas: Zona UniAndes / La Candelaria</span>
+                </div>
+                <div id="map"></div>
+            </div>
+
+            <!-- PANEL DE BÚSQUEDA Y FILTROS -->
             <div class="budget-box bg-[var(--sidebar-bg)] border border-[var(--border-color)] p-5 rounded-2xl shadow-sm flex flex-wrap gap-4 items-center justify-between">
                 <div class="flex-1 min-w-[280px]">
-                    <label class="block text-xs font-semibold text-[var(--text-muted)] mb-1">Buscar qué comer (Ej. Almuerzo, Hamburguesa, Menú):</label>
-                    <input type="text" id="input-busqueda" placeholder="Ej. Almuerzo ejecutivo, Vegetariano..." class="w-full px-4 py-2 text-sm rounded-xl border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <label class="block text-xs font-semibold text-[var(--text-muted)] mb-1">Buscar qué comer:</label>
+                    <input type="text" id="input-busqueda" placeholder="Ej. Almuerzo, Corrientazo..." class="w-full px-4 py-2 text-sm rounded-xl border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-emerald-500">
                 </div>
                 
-                <div>
-                    <label class="block text-xs font-semibold text-[var(--text-muted)] mb-1">Filtro rápido:</label>
-                    <select id="filtro-categoria" class="px-4 py-2 text-sm rounded-xl border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                        <option value="almuerzo">Almuerzos y Menús</option>
-                        <option value="economico">Económicos</option>
-                        <option value="vegetariano">Vegetariano / Saludable</option>
-                    </select>
-                </div>
-
                 <div class="self-end">
-                    <button onclick="buscarRestaurantesAPI()" class="bg-slate-900 hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white px-5 py-2 rounded-xl text-sm font-medium transition shadow-sm">
-                        Buscar en Google Maps 🔍
+                    <button onclick="cargarRestaurantes()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-xl text-sm font-medium transition shadow-sm">
+                        Buscar Opciones 🔍
                     </button>
                 </div>
             </div>
 
-            <!-- SECCIÓN DE RECOMENDACIONES -->
+            <!-- SECCIÓN DE TARJETAS -->
             <div>
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-bold">Restaurantes recomendados cerca a la Universidad</h2>
-                    <span class="text-xs text-[var(--text-muted)]" id="contador-resultados">Cargando opciones...</span>
+                    <h2 class="text-lg font-bold">Restaurantes recomendados</h2>
+                    <span class="text-xs text-[var(--text-muted)]" id="contador-resultados">Cargando...</span>
                 </div>
 
-                <!-- CONTENEDOR DE TARJETAS -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="contenedor-restaurantes">
-                    <!-- Se llenará dinámicamente con la API -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" id="contenedor-restaurantes">
+                    <!-- Tarjetas dinámicas -->
                 </div>
             </div>
 
         </div>
     </main>
 
-    <!-- SCRIPT DE FUNCIONALIDAD Y CONEXIÓN CON FASTAPI -->
+    <!-- Leaflet JS para el mapa -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // URL de tu backend en Render (Cámbiala por http://localhost:8000 si pruebas localmente)
         const API_URL = "https://observatorio-obras-bogota.onrender.com";
 
-        // Lógica de Modo Oscuro
+        // Inicializar el mapa centrado en la Universidad de los Andes (Bogotá)
+        const map = L.map('map').setView([4.6017, -74.0662], 16);
+
+        // Capa de diseño del mapa
+        L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap contributors, HOT Tiles'
+        }).addTo(map);
+        let marcadoresLayer = L.layerGroup().addTo(map);
+
+        // Modo Oscuro
         const btnConfig = document.getElementById('btn-config');
         if (localStorage.getItem('darkMode') === 'enabled') {
             document.body.classList.add('dark-mode');
@@ -148,84 +165,108 @@
             localStorage.setItem('darkMode', document.body.classList.contains('dark-mode') ? 'enabled' : 'disabled');
         });
 
-        // Función para consumir la API de FastAPI (Google Places)
-        async function buscarRestaurantesAPI() {
-            const queryInput = document.getElementById('input-busqueda').value || "almuerzo";
+        // Cargar restaurantes desde FastAPI y pintar pines en el mapa
+        async function cargarRestaurantes() {
+            const query = document.getElementById('input-busqueda').value || "almuerzo";
             const contenedor = document.getElementById('contenedor-restaurantes');
+            contenedor.innerHTML = `<div class="col-span-full text-center py-8 text-[var(--text-muted)]">⏳ Buscando lugares...</div>`;
             
-            contenedor.innerHTML = `<div class="col-span-full text-center py-12 text-[var(--text-muted)]">⏳ Buscando los mejores lugares cerca a la universidad...</div>`;
+            marcadoresLayer.clearLayers();
 
             try {
-                const response = await fetch(`${API_URL}/api/restaurantes?query=${encodeURIComponent(queryInput)}`);
-                const data = await response.json();
+                const response = await fetch(`${API_URL}/api/restaurantes?query=${encodeURIComponent(query)}`);
+                const lista = await response.json();
 
-                renderizarRestaurantes(data);
+                renderizarApp(lista);
             } catch (error) {
-                console.error("Error al conectar con la API:", error);
-                contenedor.innerHTML = `<div class="col-span-full text-center py-12 text-red-500 font-semibold">⚠️ Error de conexión con el servidor de la API. Intenta de nuevo en unos segundos.</div>`;
+                console.error("Error conectando con la API:", error);
+                contenedor.innerHTML = `<div class="col-span-full text-center py-8 text-red-500">⚠️ Error cargando los datos.</div>`;
             }
         }
 
-        function renderizarRestaurantes(lista) {
+        // Coordenadas simuladas cercanas a UniAndes para los pines del mapa
+        const coordenadasUniandes = [
+            { lat: 4.6021, lng: -74.0668 }, // La Nena
+            { lat: 4.5985, lng: -74.0705 }, // El Gato Gris
+            { lat: 4.6010, lng: -74.0655 }, // Wok & Bowl
+            { lat: 4.6028, lng: -74.0650 }  // Rápidos del Campus
+        ];
+
+        function renderizarApp(lista) {
             const contenedor = document.getElementById('contenedor-restaurantes');
             contenedor.innerHTML = '';
 
-            if(!lista || lista.length === 0) {
-                contenedor.innerHTML = `<div class="col-span-full text-center py-12 text-[var(--text-muted)]">No se encontraron restaurantes cercanos con ese criterio.</div>`;
-                document.getElementById('contador-resultados').innerText = `0 opciones encontradas`;
+            if (!lista || lista.length === 0) {
+                contenedor.innerHTML = `<div class="col-span-full text-center py-8 text-[var(--text-muted)]">No se encontraron resultados.</div>`;
+                document.getElementById('contador-resultados').innerText = `0 opciones`;
                 return;
             }
 
-            lista.forEach(r => {
+            // Marcador especial para la Universidad de los Andes
+            const uniIcon = L.divIcon({
+                className: 'custom-uni-icon',
+                html: '<div style="background-color: #10b981; color: white; padding: 5px 8px; border-radius: 8px; font-weight: bold; font-size: 11px; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">🎓 UniAndes</div>',
+                iconSize: [70, 30]
+            });
+            L.marker([4.6017, -74.0662], { icon: uniIcon }).addTo(marcadoresLayer).bindPopup("<b>Universidad de los Andes</b><br>Punto de referencia central.");
+
+            lista.forEach((r, index) => {
+                // Asignar coordenadas cercanas al campus de manera cíclica
+                const coord = coordenadasUniandes[index % coordenadasUniandes.length];
+
+                // Agregar pin al mapa
+                L.marker([coord.lat, coord.lng])
+                    .addTo(marcadoresLayer)
+                    .bindPopup(`<b>${r.nombre}</b><br>${r.direccion}<br>Precio: $${r.precio_aprox.toLocaleString()} COP`);
+
+                // Pintar tarjeta en la interfaz
                 contenedor.innerHTML += `
-                    <div class="card bg-[var(--sidebar-bg)] border border-[var(--border-color)] rounded-2xl p-5 shadow-xs flex flex-col justify-between transition hover:shadow-md">
+                    <div class="card bg-[var(--sidebar-bg)] border border-[var(--border-color)] rounded-2xl p-4 shadow-xs flex flex-col justify-between transition hover:shadow-md">
                         <div>
                             <div class="flex justify-between items-start mb-2">
-                                <h3 class="font-bold text-base line-clamp-1">${r.nombre}</h3>
-                                <span class="bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 text-xs px-2 py-0.5 rounded-md font-semibold whitespace-nowrap">⭐ ${r.calificacion} (${r.total_reviews})</span>
+                                <h3 class="font-bold text-sm line-clamp-1">${r.nombre}</h3>
+                                <span class="bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 text-[10px] px-2 py-0.5 rounded-md font-semibold">⭐ ${r.calificacion}</span>
                             </div>
-                            <p class="text-xs text-emerald-600 dark:text-emerald-400 font-medium mb-2">📍 ${r.direccion}</p>
-                            <p class="text-xs text-[var(--text-muted)] mb-4">Estado: ${r.abierto ? '🟢 Abierto' : '🔴 Cerrado'}</p>
+                            <p class="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mb-2">📍 ${r.direccion}</p>
                         </div>
-                        <div class="pt-4 border-t border-[var(--border-color)] flex items-center justify-between">
+                        <div class="pt-3 border-t border-[var(--border-color)] flex items-center justify-between">
                             <div>
-                                <span class="text-[10px] text-[var(--text-muted)] block">Costo estimado:</span>
-                                <span class="font-bold text-sm">$${r.precio_aprox.toLocaleString()} COP</span>
+                                <span class="text-[10px] text-[var(--text-muted)] block">Aprox:</span>
+                                <span class="font-bold text-xs">$${r.precio_aprox.toLocaleString()}</span>
                             </div>
-                            <button onclick="registrarGasto(${r.precio_aprox}, '${r.nombre.replace(/'/g, "")}')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-4 py-2 rounded-xl font-medium transition shadow-sm">
-                                Registrar Gasto 💸
+                            <button onclick="registrarGasto(${r.precio_aprox}, '${r.nombre.replace(/'/g, "")}')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] px-3 py-1.5 rounded-xl font-medium transition shadow-sm">
+                                Registrar 💸
                             </button>
                         </div>
                     </div>
                 `;
             });
-            document.getElementById('contador-resultados').innerText = `Mostrando ${lista.length} opciones reales`;
+
+            document.getElementById('contador-resultados').innerText = `Mostrando ${lista.length} opciones`;
         }
 
-        // Control de Presupuesto
         let saldoActual = 500000;
-
-        function registrarGasto(monto, nombreRestaurante) {
+        function registrarGasto(monto, nombre) {
             if (saldoActual - monto < 0) {
-                alert("⚠️ ¡Cuidado! Este gasto supera tu presupuesto disponible para el mes.");
+                alert("⚠️ ¡Cuidado! Este gasto supera tu presupuesto disponible.");
                 return;
             }
             saldoActual -= monto;
             document.getElementById('lbl-saldo-actual').innerText = `$${saldoActual.toLocaleString()} COP`;
-            alert(`✅ Gasto de $${monto.toLocaleString()} registrado en ${nombreRestaurante}. ¡Buen provecho!`);
+            alert(`✅ Gasto de $${monto.toLocaleString()} registrado en ${nombre}.`);
         }
 
         function abrirConfigPresupuesto() {
-            let nuevoPresupuesto = prompt("Ingresa tu presupuesto mensual de alimentación (COP):", saldoActual);
-            if (nuevoPresupuesto && !isNaN(nuevoPresupuesto)) {
-                saldoActual = parseInt(nuevoPresupuesto);
+            let nuevo = prompt("Ingresa tu presupuesto mensual de alimentación (COP):", saldoActual);
+            if (nuevo && !isNaN(nuevo)) {
+                saldoActual = parseInt(nuevo);
                 document.getElementById('lbl-saldo-actual').innerText = `$${saldoActual.toLocaleString()} COP`;
             }
         }
 
-        // Carga inicial automática al abrir la página
+        // Carga inicial al abrir la página
         window.onload = () => {
-            buscarRestaurantesAPI();
+            cargarRestaurantes();
         };
     </script>
 </body>

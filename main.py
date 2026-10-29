@@ -1,11 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+import requests
 import os
 
 app = FastAPI(
     title="BolsilloU API",
-    description="Backend optimizado con platos y fotos para BolsilloU",
-    version="1.0.7"
+    description="Backend híbrido con Google Places y platos detallados",
+    version="1.0.8"
 )
 
 app.add_middleware(
@@ -16,8 +17,41 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Base de datos robusta y detallada orientada 100% a restaurantes universitarios cerca a UniAndes
-RESTAURANTES_DETALLADOS = [
+GOOGLE_API_KEY = os.getenv("AIzaSyBegmQYvWqHaiLfrb9lpiTZnWsqYBJAzMU")
+
+# Fotos e ideas de platos rotativos para asignar a los restaurantes que traiga Google
+FOTOS_Y_PLATOS = [
+    {
+        "foto": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80",
+        "platos": [
+            {"nombre": "Menú Ejecutivo del Día", "precio": 13000, "descripcion": "Incluye sopa, plato principal con carne o pollo, arroz, ensalada y jugo."},
+            {"nombre": "Almuerzo Vegetariano", "precio": 12000, "descripcion": "Opción saludable con proteína vegetal, granos, vegetales al vapor y bebida."}
+        ]
+    },
+    {
+        "foto": "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80",
+        "platos": [
+            {"nombre": "Bowl Universitario", "precio": 16000, "descripcion": "Base de arroz o quinua, proteína a elección, aguacate y vegetales frescos."},
+            {"nombre": "Wrap de Pollo y Queso", "precio": 14000, "descripcion": "Tortilla de trigo tostada rellena de pollo desmenuzado, vegetales y salsa de la casa."}
+        ]
+    },
+    {
+        "foto": "https://images.unsplash.com/photo-1543353071-10c8ba85a904?auto=format&fit=crop&w=600&q=80",
+        "platos": [
+            {"nombre": "Pasta Casera Boloñesa", "precio": 15000, "descripcion": "Porción generosa de pasta con salsa de carne tradicional y queso parmesano."},
+            {"nombre": "Pechuga Gratinada", "precio": 17000, "descripcion": "Pechuga de pollo jugosa cubierta con queso fundido, acompañada de papas a la francesa."}
+        ]
+    },
+    {
+        "foto": "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=600&q=80",
+        "platos": [
+            {"nombre": "Salchipapa Estudiantil", "precio": 11000, "descripcion": "Papas doradas, trozos de salchicha, queso costeño y salsas."},
+            {"nombre": "Perro Caliente con Queso", "precio": 9500, "descripcion": "Pan artesanal, salchicha alemana, papa fosforito y queso fundido."}
+        ]
+    }
+]
+
+RESTAURANTES_RESPALDO = [
     {
         "nombre": "La Nena Restaurante",
         "direccion": "Calle 19A # 1-28, Bogotá",
@@ -27,11 +61,8 @@ RESTAURANTES_DETALLADOS = [
         "abierto": True,
         "lat": 4.6025,
         "lng": -74.0665,
-        "foto": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80",
-        "platos": [
-            {"nombre": "Menú Ejecutivo de Pollo", "precio": 13000, "descripcion": "Sopa del día, pechuga a la plancha, arroz, frijol, ensalada y jugo."},
-            {"nombre": "Sobrebarriga en Salsa", "precio": 15000, "descripcion": "Carne tierna en salsa criolla con yuca, papa cocida y arepa."}
-        ]
+        "foto": FOTOS_Y_PLATOS[0]["foto"],
+        "platos": FOTOS_Y_PLATOS[0]["platos"]
     },
     {
         "nombre": "El Gato Gris",
@@ -42,11 +73,8 @@ RESTAURANTES_DETALLADOS = [
         "abierto": True,
         "lat": 4.5985,
         "lng": -74.0705,
-        "foto": "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80",
-        "platos": [
-            {"nombre": "Bowl Vegano de la Casa", "precio": 18000, "descripcion": "Quinua, falafel de garbanzo, aguacate, tomates cherry y tahini."},
-            {"nombre": "Crepes de Espinaca", "precio": 16000, "descripcion": "Rellenos de espinacas salteadas, ricotta y gratinados con mozzarella."}
-        ]
+        "foto": FOTOS_Y_PLATOS[1]["foto"],
+        "platos": FOTOS_Y_PLATOS[1]["platos"]
     },
     {
         "nombre": "Wok & Bowl Universitario",
@@ -57,11 +85,8 @@ RESTAURANTES_DETALLADOS = [
         "abierto": True,
         "lat": 4.6015,
         "lng": -74.0650,
-        "foto": "https://images.unsplash.com/photo-1543353071-10c8ba85a904?auto=format&fit=crop&w=600&q=80",
-        "platos": [
-            {"nombre": "Teriyaki Bowl de Pollo", "precio": 16000, "descripcion": "Arroz jaspeado, pollo glaseado en salsa teriyaki y vegetales salteados."},
-            {"nombre": "Bowl de Tofú Crocante", "precio": 15000, "descripcion": "Tofú marinado, edamame, zanahoria y base de arroz integral."}
-        ]
+        "foto": FOTOS_Y_PLATOS[2]["foto"],
+        "platos": FOTOS_Y_PLATOS[2]["platos"]
     },
     {
         "nombre": "Rápidos del Campus",
@@ -72,40 +97,83 @@ RESTAURANTES_DETALLADOS = [
         "abierto": True,
         "lat": 4.6020,
         "lng": -74.0640,
-        "foto": "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=600&q=80",
-        "platos": [
-            {"nombre": "Perro Caliente Universitario", "precio": 9000, "descripcion": "Salchicha premium, queso fundido, papa fosforito y salsas."},
-            {"nombre": "Salchipapa Express", "precio": 11000, "descripcion": "Papas a la francesa doradas, trozos de salchicha y queso costeño."}
-        ]
-    },
-    {
-        "nombre": "Cafetería Central UniAndes",
-        "direccion": "Cra. 1 # 18A-12 (Interior Campus)",
-        "calificacion": 4.8,
-        "total_reviews": 420,
-        "id_lugar": "rest_5",
-        "abierto": True,
-        "lat": 4.6017,
-        "lng": -74.0662,
-        "foto": "https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=600&q=80",
-        "platos": [
-            {"nombre": "Almuerzo del Estudiante", "precio": 11000, "descripcion": "Sopa, seco económico del día (carne o pollo) y panela."},
-            {"nombre": "Empanada casera + Jugo", "precio": 5500, "descripcion": "Dos empanadas de carne o pollo con ají y jugo natural."}
-        ]
+        "foto": FOTOS_Y_PLATOS[3]["foto"],
+        "platos": FOTOS_Y_PLATOS[3]["platos"]
     }
 ]
 
 @app.get("/")
 def ruta_raiz():
-    return {"mensaje": "¡BolsilloU API lista!"}
+    return {"mensaje": "¡BolsilloU API híbrida activa!"}
 
 @app.get("/api/restaurantes")
-def obtener_restaurantes(query: str = "almuerzo"):
-    if query and query != "almuerzo":
-        filtrados = [
-            r for r in RESTAURANTES_DETALLADOS 
-            if query.lower() in r["nombre"].lower() or any(query.lower() in p["nombre"].lower() for p in r["platos"])
-        ]
-        return filtrados if filtrados else RESTAURANTES_DETALLADOS
+def obtener_restaurantes(query: str = "restaurante económico"):
+    if not GOOGLE_API_KEY:
+        return RESTAURANTES_RESPALDO
+
+    url = "https://places.googleapis.com/v1/places:searchText"
     
-    return RESTAURANTES_DETALLADOS
+    headers = {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": GOOGLE_API_KEY,
+        "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.rating,places.userRatingCount,places.priceLevel,places.id,places.businessStatus,places.location"
+    }
+
+    body = {
+        "textQuery": f"restaurante almuerzo cerca a Universidad de los Andes Bogota",
+        "locationBias": {
+            "circle": {
+                "center": {
+                    "latitude": 4.6017,
+                    "longitude": -74.0662
+                },
+                "radius": 1500.0
+            }
+        },
+        "languageCode": "es"
+    }
+
+    try:
+        response = requests.post(url, json=body, headers=headers)
+        
+        if response.status_code == 200:
+            data = response.json()
+            places = data.get("places", [])
+            
+            if places:
+                resultados_reales = []
+                for i, place in enumerate(places):
+                    nombre_lugar = place.get("displayName", {}).get("text", "Restaurante cercano")
+                    
+                    # Evitamos incluir edificios institucionales o tiendas que no sean restaurantes
+                    nombre_lower = nombre_lugar.lower()
+                    if "universidad" in nombre_lower or "edificio" in nombre_lower or "tienda d1" in nombre_lower:
+                        continue
+
+                    location = place.get("location", {})
+                    lat = location.get("latitude", 4.6017)
+                    lng = location.get("longitude", -74.0662)
+
+                    # Asignamos de forma cíclica una foto y un menú de platos de nuestra lista enriquecida
+                    info_extra = FOTOS_Y_PLATOS[i % len(FOTOS_Y_PLATOS)]
+                    
+                    resultados_reales.append({
+                        "nombre": nombre_lugar,
+                        "direccion": place.get("formattedAddress", "Cerca al campus universitario"),
+                        "calificacion": place.get("rating", 4.4),
+                        "total_reviews": place.get("userRatingCount", 20),
+                        "id_lugar": place.get("id", str(i)),
+                        "abierto": place.get("businessStatus", "OPERATIONAL") == "OPERATIONAL",
+                        "lat": lat,
+                        "lng": lng,
+                        "foto": info_extra["foto"],
+                        "platos": info_extra["platos"]
+                    })
+                
+                if resultados_reales:
+                    return resultados_reales
+                
+    except Exception:
+        pass
+
+    return RESTAURANTES_RESPALDO

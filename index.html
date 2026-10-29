@@ -210,21 +210,17 @@
             });
             L.marker([4.6017, -74.0662], { icon: uniIcon }).addTo(marcadoresLayer).bindPopup("<b>Universidad de los Andes</b><br>Punto de referencia central.");
 
-            // Recorremos TODOS los restaurantes que lleguen de la lista sin límite
-            lista.forEach((r, index) => {
-                // Generamos una pequeña dispersión circular alrededor de UniAndes (4.6017, -74.0662) 
-                // para que los pines no queden encimados uno sobre otro en el mapa si la API no trae coordenadas exactas.
-                const offsetLat = (Math.sin(index) * 0.003);
-                const offsetLng = (Math.cos(index) * 0.003);
-                const lat = 4.6017 + offsetLat;
-                const lng = -74.0662 + offsetLng;
+            // Recorremos los restaurantes usando sus coordenadas reales
+            lista.forEach((r) => {
+                const lat = r.lat || 4.6017;
+                const lng = r.lng || -74.0662;
 
-                // Agregar pin individual para cada restaurante al mapa
+                // Agregar pin en la ubicación geográfica real
                 L.marker([lat, lng])
                     .addTo(marcadoresLayer)
                     .bindPopup(`<b>${r.nombre}</b><br>${r.direccion}<br><b>Precio aprox:</b> $${r.precio_aprox.toLocaleString()} COP<br>⭐ Calificación: ${r.calificacion}`);
 
-                // Pintar su respectiva tarjeta en la interfaz web
+                // Pintar la tarjeta correspondiente
                 contenedor.innerHTML += `
                     <div class="card bg-[var(--sidebar-bg)] border border-[var(--border-color)] rounded-2xl p-4 shadow-xs flex flex-col justify-between transition hover:shadow-md">
                         <div>

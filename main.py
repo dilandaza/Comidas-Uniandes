@@ -1,127 +1,75 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import requests
+import os
 
-app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
+app = FastAPI(
+    title="BolsilloU API",
+    description="Backend para la gestión de presupuesto y recomendación de restaurantes cerca a UniAndes",
+    version="1.0.0"
 )
 
-@app.get("/api/obras/{localidad}")
-def obtener_obras(localidad: str):
-    url_secop = "https://www.datos.gov.co/resource/jbjy-vk9h.json"
+# Configurar CORS para permitir peticiones desde tu frontend (GitHub Pages o local)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # En producción puedes restringirlo a tu URL de GitHub Pages
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Reemplaza esto con tu API Key real de Google Places
+GOOGLE_API_KEY = "AIzaSyBEsYS9HvN7BibwqkUSOMSfI9zuOxrQCKE"
+
+@app.get("/")
+def ruta_raiz():
+    return {"mensaje": "¡Bienvenido al backend de BolsilloU! El servidor está activo."}
+
+@app.get("/api/restaurantes")
+def obtener_restaurantes(query: str = "almuerzo"):
+    """
+    Busca restaurantes cercanos a la Universidad de los Andes utilizando Google Places API.
+    """
+    # Coordenadas aproximadas de la Universidad de los Andes en Bogotá
+    lat = 4.6017
+    lng = -74.0662
+    radio = 1500  # Radio de búsqueda en metros (1.5 km alrededor del campus)
+
+    url = "https://maps.googleapis.com/maps/api/place/textsearch/json"
     
-    if localidad == "Metro":
-        parametros = {
-            "$q": "Metro",
-            "ciudad_entidad": "Bogotá", 
-            "$limit": 50 
-        }
-    else:
-        parametros = {
-            "$q": f"Bogotá {localidad}",
-            "tipo_de_contrato": "Obra", 
-            "$limit": 20 
-        }
-    
-    obras_filtradas = []
-    
+    params = {
+        "query": f"{query} cerca a Universidad de los Andes Bogotá",
+        "location": f"{lat},{lng}",
+        "radius": radio,
+        "key": GOOGLE_API_KEY,
+        "language": "es"
+    }
+
     try:
-        respuesta = requests.get(url_secop, params=parametros)
-        contratos = respuesta.json()
+        response = requests.get(url, params=params)
+        data = response.json()
         
-        if isinstance(contratos, list):
-            for contrato in contratos:
-                if isinstance(contrato, dict):
-                    titulo = contrato.get("descripcion_del_proceso") or \
-                             contrato.get("descripci_n_del_proceso") or "Sin descripción"
-                             
-                    entidad = contrato.get("nombre_entidad") or \
-                              contrato.get("entidad") or "Entidad no especificada"
-                              
-                    estado = contrato.get("estado_del_proceso") or "Desconocido"
-                    valor = contrato.get("valor_del_contrato") or "0"
+        if response.status_code != 200 or "results" not in data:
+            raise HTTPException(status_code=500, detail="Error al consultar la API de Google Places")
 
-                    if localidad == "Metro" and "polic" in entidad.lower():
-                        continue
+        resultados_limpios = []
+        for place in data.get("results", []):
+            # Nivel de precio en Google (1 a 4). Si no existe, asignamos un valor por defecto (1)
+            price_level = place.get("price_level", 1)
+            # Fórmula estimada en COP adaptada al presupuesto estudiantil
+            precio_estimado = price_level * 6000 + 7000 
 
-                    obras_filtradas.append({
-                        "titulo": str(titulo).capitalize(),
-                        "entidad": entidad,
-                        "valor": valor,
-                        "estado": estado
-                    })
+            resultados_limpios.append({
+                "nombre": place.get("name"),
+                "direccion": place.get("formatted_address", "Cerca al campus universitario"),
+                "calificacion": place.get("rating", 4.0),
+                "total_reviews": place.get("user_ratings_total", 0),
+                "precio_aprox": precio_estimado,
+                "id_lugar": place.get("place_id"),
+                "abierto": place.get("business_status", "OPERATIONAL") == "OPERATIONAL"
+            })
+
+        return resultados_limpios
+
     except Exception as e:
-        print("Error de conexión:", e)
-
-    # ==========================================
-    # FALLBACK AMPLIADO (10 CONTRATOS DEL METRO)
-    # ==========================================
-    if localidad == "Metro" and len(obras_filtradas) == 0:
-        return [
-            {
-                "titulo": "Concesión integral para la construcción, operación y mantenimiento de la Primera Línea del Metro de Bogotá",
-                "entidad": "Empresa Metro de Bogotá S.A.",
-                "valor": "13800000000000",
-                "estado": "En Ejecución"
-            },
-            {
-                "titulo": "Interventoría integral para el proyecto Primera Línea del Metro (PLMB)",
-                "entidad": "Empresa Metro de Bogotá S.A.",
-                "valor": "317000000000",
-                "estado": "En Ejecución"
-            },
-            {
-                "titulo": "Traslado de redes matrices de acueducto y alcantarillado para habilitar el trazado del Metro",
-                "entidad": "Empresa de Acueducto y Alcantarillado de Bogotá",
-                "valor": "14500000000",
-                "estado": "Adjudicado"
-            },
-            {
-                "titulo": "Adquisición predial, demolición y cerramiento de inmuebles para las estaciones de la Línea 1",
-                "entidad": "Instituto de Desarrollo Urbano (IDU)",
-                "valor": "85000000000",
-                "estado": "En Ejecución"
-            },
-            {
-                "titulo": "Consultoría para la estructuración técnica, legal y financiera de la Línea 2 del Metro",
-                "entidad": "Empresa Metro de Bogotá S.A.",
-                "valor": "9500000000",
-                "estado": "Liquidado"
-            },
-            {
-                "titulo": "Estudios de impacto ambiental y monitoreo arqueológico en el patio taller",
-                "entidad": "Empresa Metro de Bogotá S.A.",
-                "valor": "2100000000",
-                "estado": "En Ejecución"
-            },
-            {
-                "titulo": "Adecuación de desvíos viales y plan de manejo de tráfico (PMT) en la Avenida Caracas",
-                "entidad": "Secretaría Distrital de Movilidad",
-                "valor": "4200000000",
-                "estado": "En Ejecución"
-            },
-            {
-                "titulo": "Estrategia de cultura ciudadana, socialización y mitigación de impactos con la comunidad",
-                "entidad": "Empresa Metro de Bogotá S.A.",
-                "valor": "1800000000",
-                "estado": "Adjudicado"
-            },
-            {
-                "titulo": "Supervisión técnica del traslado de redes de energía de alta tensión y semaforización",
-                "entidad": "Empresa Metro de Bogotá S.A.",
-                "valor": "3600000000",
-                "estado": "Borrador"
-            },
-            {
-                "titulo": "Contratación de asesoría legal internacional para la revisión de contratos de material rodante (Trenes)",
-                "entidad": "Empresa Metro de Bogotá S.A.",
-                "valor": "850000000",
-                "estado": "Celebrado"
-            }
-        ]
-            
-    return obras_filtradas[:20]
+        raise HTTPException(status_code=500, detail=str(e))

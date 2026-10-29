@@ -93,7 +93,12 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        // IMPORTANTE: cambia esto por la URL de TU servicio en Render
         const API_URL = "https://observatorio-obras-bogota.onrender.com";
+
+        function esc(t) {
+            return String(t ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+        }
         const map = L.map('map').setView([4.6017, -74.0662], 16);
 
         L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
@@ -111,10 +116,12 @@
             localStorage.setItem('darkMode', document.body.classList.contains('dark-mode') ? 'enabled' : 'disabled');
         });
 
+        document.getElementById('input-busqueda').addEventListener('keydown', e => { if (e.key === 'Enter') cargarRestaurantes(); });
+
         async function cargarRestaurantes() {
             const query = document.getElementById('input-busqueda').value || "almuerzo";
             const contenedor = document.getElementById('contenedor-restaurantes');
-            contenedor.innerHTML = `<div class="col-span-full text-center py-8 text-[var(--text-muted)]">⏳ Cargando opciones gastronómicas...</div>`;
+            contenedor.innerHTML = `<div class="col-span-full text-center py-8 text-[var(--text-muted)]">⏳ Cargando... si el servidor estaba dormido puede tardar hasta un minuto.</div>`;
             
             try {
                 const response = await fetch(`${API_URL}/api/restaurantes?query=${encodeURIComponent(query)}`);
@@ -146,20 +153,21 @@
                 const lng = r.lng || (-74.0662 + (Math.cos(index) * 0.002));
                 const fotoUrl = r.foto || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80";
 
-                const marker = L.marker([lat, lng]).bindPopup(`<b>${r.nombre}</b><br>${r.direccion}`);
+                const marker = L.marker([lat, lng]).bindPopup(`<b>${esc(r.nombre)}</b><br>${esc(r.direccion)}`);
                 marcadoresLayer.addLayer(marker);
                 group.addLayer(marker);
 
                 contenedor.innerHTML += `
                     <div class="card bg-[var(--sidebar-bg)] border border-[var(--border-color)] rounded-2xl overflow-hidden shadow-xs flex flex-col justify-between transition hover:shadow-md">
-                        <img src="${fotoUrl}" alt="${r.nombre}" class="w-full h-36 object-cover">
+                        <img src="${fotoUrl}" alt="${esc(r.nombre)}" class="w-full h-36 object-cover">
                         <div class="p-4 flex flex-col flex-1 justify-between">
                             <div>
                                 <div class="flex justify-between items-start mb-1">
-                                    <h3 class="font-bold text-sm line-clamp-1">${r.nombre}</h3>
-                                    <span class="bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 text-[10px] px-2 py-0.5 rounded-md font-semibold">⭐ ${r.calificacion}</span>
+                                    <h3 class="font-bold text-sm line-clamp-1">${esc(r.nombre)}</h3>
+                                    <span class="bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 text-[10px] px-2 py-0.5 rounded-md font-semibold">⭐ ${esc(r.calificacion)}</span>
                                 </div>
-                                <p class="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mb-3">📍 ${r.direccion}</p>
+                                <p class="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mb-1">📍 ${esc(r.direccion)}</p>
+                                <p class="text-[11px] text-[var(--text-muted)] mb-3">Precio: ${esc(r.nivel_precio || "N/D")}</p>
                             </div>
                             <button onclick="abrirDetalle(${index})" class="w-full bg-slate-900 hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white text-xs py-2 rounded-xl font-medium transition shadow-sm">
                                 Ver Menú y Precios 👁️
@@ -179,16 +187,23 @@
             const body = document.getElementById('modal-body');
 
             let platosHtml = '';
-            r.platos.forEach(p => {
+            if (!r.platos || r.platos.length === 0) {
+                platosHtml = `<p class="text-xs text-[var(--text-muted)]">Aún no tenemos el menú de este lugar. Nivel de precio: <b>${esc(r.nivel_precio || "N/D")}</b>.</p>
+                    <button onclick="registrarGastoManual(${index})" class="mt-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-2 rounded-xl font-medium">Registrar un gasto aquí 💸</button>`;
+            }
+            else if (r.es_ejemplo) {
+                platosHtml += `<p class="text-[10px] text-amber-600 mb-2">Datos de ejemplo, no son precios reales.</p>`;
+            }
+            (r.platos || []).forEach((p, pi) => {
                 platosHtml += `
                     <div class="bg-slate-50 dark:bg-slate-800 p-3 rounded-2xl flex justify-between items-center gap-3 border border-[var(--border-color)]">
                         <div class="flex-1">
-                            <h4 class="font-bold text-xs text-[var(--text-main)]">${p.nombre}</h4>
-                            <p class="text-[11px] text-[var(--text-muted)] mt-0.5">${p.descripcion}</p>
+                            <h4 class="font-bold text-xs text-[var(--text-main)]">${esc(p.nombre)}</h4>
+                            <p class="text-[11px] text-[var(--text-muted)] mt-0.5">${esc(p.descripcion)}</p>
                         </div>
                         <div class="text-right">
                             <span class="text-xs font-black text-emerald-600 dark:text-emerald-400 block">$${p.precio.toLocaleString()}</span>
-                            <button onclick="registrarGasto(${p.precio}, '${r.nombre} (${p.nombre})')" class="mt-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] px-3 py-1.5 rounded-xl font-medium transition shadow-sm">
+                            <button onclick="registrarGasto(${p.precio}, ${index}, ${pi})" class="mt-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] px-3 py-1.5 rounded-xl font-medium transition shadow-sm">
                                 Pedir 💸
                             </button>
                         </div>
@@ -197,12 +212,12 @@
             });
 
             body.innerHTML = `
-                <img src="${r.foto || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80'}" class="w-full h-48 object-cover rounded-2xl mb-4">
+                <img src="${esc(r.foto || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80')}" class="w-full h-48 object-cover rounded-2xl mb-4">
                 <div class="flex justify-between items-start mb-2">
-                    <h2 class="text-lg font-bold">${r.nombre}</h2>
-                    <span class="bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 text-xs px-2.5 py-1 rounded-lg font-semibold">⭐ ${r.calificacion}</span>
+                    <h2 class="text-lg font-bold">${esc(r.nombre)}</h2>
+                    <span class="bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 text-xs px-2.5 py-1 rounded-lg font-semibold">⭐ ${esc(r.calificacion)}</span>
                 </div>
-                <p class="text-xs text-emerald-600 dark:text-emerald-400 font-medium mb-4">📍 ${r.direccion}</p>
+                <p class="text-xs text-emerald-600 dark:text-emerald-400 font-medium mb-4">📍 ${esc(r.direccion)}</p>
                 
                 <h3 class="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-3">Platos y Precios Disponibles:</h3>
                 <div class="space-y-3">
@@ -220,27 +235,40 @@
             modal.classList.add('hidden');
         }
 
-        let saldoActual = 500000;
-        function registrarGasto(monto, nombrePlato) {
+        let saldoActual = parseInt(localStorage.getItem('saldoActual')) || 500000;
+        function pintarSaldo() {
+            document.getElementById('lbl-saldo-actual').innerText = `$${saldoActual.toLocaleString()} COP`;
+            localStorage.setItem('saldoActual', saldoActual);
+        }
+
+        function descontar(monto, nombre) {
             if (saldoActual - monto < 0) {
                 alert("⚠️ ¡Cuidado! Este gasto supera tu presupuesto disponible.");
                 return;
             }
             saldoActual -= monto;
-            document.getElementById('lbl-saldo-actual').innerText = `$${saldoActual.toLocaleString()} COP`;
-            alert(`✅ ¡Gasto registrado!\nPlato: ${nombrePlato}\nValor: $${monto.toLocaleString()} COP`);
+            pintarSaldo();
+            alert(`✅ ¡Gasto registrado!\n${nombre}\nValor: $${monto.toLocaleString()} COP`);
             cerrarModal();
         }
 
-        function ajustarPresupuesto() {
-            let nuevo = prompt("Ingresa tu presupuesto mensual de alimentación (COP):", saldoActual);
-            if (nuevo && !isNaN(nuevo)) {
-                saldoActual = parseInt(nuevo);
-                document.getElementById('lbl-saldo-actual').innerText = `$${saldoActual.toLocaleString()} COP`;
-            }
+        function registrarGasto(monto, indexRest, indexPlato) {
+            const r = listaGlobal[indexRest];
+            descontar(monto, `${r.nombre} (${r.platos[indexPlato].nombre})`);
         }
 
-        window.onload = () => { cargarRestaurantes(); };
+        function registrarGastoManual(indexRest) {
+            const r = listaGlobal[indexRest];
+            const monto = parseInt(prompt(`¿Cuánto gastaste en ${r.nombre}? (COP)`));
+            if (monto > 0) descontar(monto, r.nombre);
+        }
+
+        function ajustarPresupuesto() {
+            const nuevo = parseInt(prompt("Ingresa tu presupuesto mensual de alimentación (COP):", saldoActual));
+            if (nuevo >= 0) { saldoActual = nuevo; pintarSaldo(); }
+        }
+
+        window.onload = () => { pintarSaldo(); cargarRestaurantes(); };
     </script>
 </body>
 </html>

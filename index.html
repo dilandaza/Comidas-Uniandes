@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BolsilloU - Presupuesto y Restaurantes</title>
+    <title>BolsilloU - Presupuesto y Foro Estudiantil</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
@@ -24,7 +24,7 @@
             --border-color: #334155;
             --card-bg: #1e293b;
         }
-        body.dark-mode .card, body.dark-mode .budget-box, body.dark-mode .modal-content {
+        body.dark-mode .card, body.dark-mode .budget-box, body.dark-mode .modal-content, body.dark-mode textarea, body.dark-mode select {
             background-color: var(--card-bg); color: var(--text-main); border-color: var(--border-color);
         }
         body.dark-mode input { background-color: #0f172a; color: var(--text-main); border-color: var(--border-color); }
@@ -37,8 +37,8 @@
     <aside class="w-20 bg-[var(--sidebar-bg)] border-r border-[var(--border-color)] flex flex-col items-center py-6 justify-between z-10 shadow-sm">
         <div class="flex flex-col items-center gap-6">
             <div class="w-10 h-10 bg-emerald-600 text-white font-bold rounded-xl flex items-center justify-center text-lg shadow-md">U</div>
-            <div class="w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-xl hover:bg-slate-100 dark:hover:bg-slate-800">🍽️</div>
-            <div class="w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-xl hover:bg-slate-100 dark:hover:bg-slate-800">🗺️</div>
+            <div onclick="cambiarVista('inicio')" class="sidebar-btn w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Restaurantes y Mapa">🍽️</div>
+            <div onclick="cambiarVista('foro')" class="sidebar-btn w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Foro Comunitario">💬</div>
         </div>
         <div class="w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-xl hover:bg-slate-100 dark:hover:bg-slate-800" id="btn-config" title="Modo Oscuro">⚙️</div>
     </aside>
@@ -47,8 +47,8 @@
     <main class="flex-1 flex flex-col h-full overflow-y-auto">
         <header class="bg-[var(--sidebar-bg)] border-b border-[var(--border-color)] px-8 py-4 flex justify-between items-center shadow-xs">
             <div>
-                <h1 class="text-xl font-bold">BolsilloU - Alimentación Inteligente</h1>
-                <p class="text-xs text-[var(--text-muted)]">Encuentra opciones económicas cerca a UniAndes</p>
+                <h1 class="text-xl font-bold" id="titulo-seccion">BolsilloU - Alimentación Inteligente</h1>
+                <p class="text-xs text-[var(--text-muted)]" id="subtitulo-seccion">Encuentra opciones económicas cerca a UniAndes</p>
             </div>
             <div class="flex items-center gap-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-4 py-2 rounded-xl">
                 <div>
@@ -59,26 +59,57 @@
             </div>
         </header>
 
-        <div class="p-8 max-w-7xl mx-auto w-full flex flex-col gap-6">
-            <!-- MAPA -->
+        <!-- VISTA 1: INICIO (MAPA Y RESTAURANTES) -->
+        <div id="vista-inicio" class="p-8 max-w-7xl mx-auto w-full flex flex-col gap-6">
             <div class="budget-box bg-[var(--sidebar-bg)] border border-[var(--border-color)] p-4 rounded-2xl shadow-sm">
                 <h2 class="text-sm font-bold mb-2 flex items-center gap-2">🗺️ Mapa Interactivo - Zona UniAndes</h2>
                 <div id="map"></div>
             </div>
 
-            <!-- BUSCADOR -->
             <div class="budget-box bg-[var(--sidebar-bg)] border border-[var(--border-color)] p-5 rounded-2xl shadow-sm flex gap-4 items-center">
                 <input type="text" id="input-busqueda" placeholder="Buscar por plato o restaurante..." class="flex-1 px-4 py-2 text-sm rounded-xl border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-emerald-500">
                 <button onclick="cargarRestaurantes()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-xl text-sm font-medium transition shadow-sm">Buscar 🔍</button>
             </div>
 
-            <!-- TARJETAS -->
             <div>
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-lg font-bold">Restaurantes Disponibles</h2>
                     <span class="text-xs text-[var(--text-muted)]" id="contador-resultados">Cargando...</span>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="contenedor-restaurantes"></div>
+            </div>
+        </div>
+
+        <!-- VISTA 2: FORO ESTUDIANTIL -->
+        <div id="vista-foro" class="p-8 max-w-4xl mx-auto w-full hidden flex-col gap-6">
+            <div class="budget-box bg-[var(--sidebar-bg)] border border-[var(--border-color)] p-6 rounded-2xl shadow-sm">
+                <h2 class="text-base font-bold mb-1">✍️ Comparte un tip o reseña</h2>
+                <p class="text-xs text-[var(--text-muted)] mb-4">Ayuda a otros uniandinos a encontrar las mejores opciones y cuidar el bolsillo.</p>
+                
+                <form onsubmit="publicarComentario(event)" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold mb-1">Tu Nombre o Apodo:</label>
+                            <input type="text" id="foro-nombre" required placeholder="Ej. Ana (Microbiología)" class="w-full px-4 py-2 text-sm rounded-xl border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold mb-1">Restaurante o Zona:</label>
+                            <input type="text" id="foro-lugar" required placeholder="Ej. La Nena / Cafetería Central" class="w-full px-4 py-2 text-sm rounded-xl border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold mb-1">Tu Opinión o Tip:</label>
+                        <textarea id="foro-texto" required rows="3" placeholder="Ej. El menú ejecutivo de pollo es gigante y baratísimo, pero vayan antes de las 12:30 porque se llena." class="w-full px-4 py-2 text-sm rounded-xl border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+                    </div>
+                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-5 py-2.5 rounded-xl font-semibold transition shadow-sm">
+                        Publicar en el Foro 🚀
+                    </button>
+                </form>
+            </div>
+
+            <!-- LISTA DE PUBLICACIONES -->
+            <div class="space-y-4" id="contenedor-foro">
+                <!-- Se cargan dinámicamente -->
             </div>
         </div>
     </main>
@@ -93,14 +124,13 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // IMPORTANTE: cambia esto por la URL de TU servicio en Render
         const API_URL = "https://observatorio-obras-bogota.onrender.com";
 
         function esc(t) {
             return String(t ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
         }
-        const map = L.map('map').setView([4.6017, -74.0662], 16);
 
+        const map = L.map('map').setView([4.6017, -74.0662], 16);
         L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '© OpenStreetMap'
@@ -109,6 +139,33 @@
         let marcadoresLayer = L.layerGroup().addTo(map);
         let listaGlobal = [];
 
+        // Cambio de Vistas (Inicio / Foro)
+        function cambiarVista(vista) {
+            const vInicio = document.getElementById('vista-inicio');
+            const vForo = document.getElementById('vista-foro');
+            const tit = document.getElementById('titulo-seccion');
+            const sub = document.getElementById('subtitulo-seccion');
+
+            if (vista === 'inicio') {
+                vInicio.classList.remove('hidden');
+                vInicio.classList.add('flex');
+                vForo.classList.remove('flex');
+                vForo.classList.add('hidden');
+                tit.innerText = "BolsilloU - Alimentación Inteligente";
+                sub.innerText = "Encuentra opciones económicas cerca a UniAndes";
+                setTimeout(() => { map.invalidateSize(); }, 200);
+            } else {
+                vInicio.classList.remove('flex');
+                vInicio.classList.add('hidden');
+                vForo.classList.remove('hidden');
+                vForo.classList.add('flex');
+                tit.innerText = "BolsilloU - Foro Comunitario";
+                sub.innerText = "Comparte y lee tips de otros estudiantes de la universidad";
+                cargarForo();
+            }
+        }
+
+        // Modo Oscuro
         const btnConfig = document.getElementById('btn-config');
         if (localStorage.getItem('darkMode') === 'enabled') document.body.classList.add('dark-mode');
         btnConfig.addEventListener('click', () => {
@@ -121,7 +178,7 @@
         async function cargarRestaurantes() {
             const query = document.getElementById('input-busqueda').value || "almuerzo";
             const contenedor = document.getElementById('contenedor-restaurantes');
-            contenedor.innerHTML = `<div class="col-span-full text-center py-8 text-[var(--text-muted)]">⏳ Cargando... si el servidor estaba dormido puede tardar hasta un minuto.</div>`;
+            contenedor.innerHTML = `<div class="col-span-full text-center py-8 text-[var(--text-muted)]">⏳ Cargando restaurantes...</div>`;
             
             try {
                 const response = await fetch(`${API_URL}/api/restaurantes?query=${encodeURIComponent(query)}`);
@@ -138,7 +195,6 @@
             marcadoresLayer.clearLayers();
             const group = new L.FeatureGroup();
 
-            // Marcador UniAndes
             const uniIcon = L.divIcon({
                 className: 'custom-uni-icon',
                 html: '<div style="background-color: #10b981; color: white; padding: 5px 8px; border-radius: 8px; font-weight: bold; font-size: 11px; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">🎓 UniAndes</div>',
@@ -181,6 +237,80 @@
             document.getElementById('contador-resultados').innerText = `Mostrando ${lista.length} opciones`;
         }
 
+        // LÓGICA DEL FORO ESTUDIANTIL
+        function obtenerComentarios() {
+            let guardados = localStorage.getItem('bolsillou_foro');
+            if (guardados) {
+                return JSON.parse(guardados);
+            }
+            // Comentarios iniciales de ejemplo para la presentación
+            return [
+                {
+                    nombre: "Camila R. (Ingeniería)",
+                    lugar: "La Nena Restaurante",
+                    texto: "El almuerzo ejecutivo vale totalmente la pena por $13k. Tip: pidan el jugo en leche si hay disponible.",
+                    fecha: "Hace 2 horas"
+                },
+                {
+                    nombre: "Mateo S. (Administración)",
+                    lugar: "Cafetería Central UniAndes",
+                    texto: "Para los días de parciales donde no hay tiempo de salir del campus, el menú económico de la central salva la vida.",
+                    fecha: "Ayer"
+                }
+            ];
+        }
+
+        function cargarForo() {
+            const contenedor = document.getElementById('contenedor-foro');
+            const comentarios = obtenerComentarios();
+            contenedor.innerHTML = '';
+
+            if (comentarios.length === 0) {
+                contenedor.innerHTML = `<div class="text-center py-6 text-[var(--text-muted)] text-xs">No hay publicaciones aún. ¡Sé el primero en opinar!</div>`;
+                return;
+            }
+
+            comentarios.forEach((c) => {
+                contenedor.innerHTML += `
+                    <div class="budget-box bg-[var(--sidebar-bg)] border border-[var(--border-color)] p-4 rounded-2xl shadow-sm">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h3 class="font-bold text-xs text-[var(--text-main)]">${esc(c.nombre)}</h3>
+                                <span class="inline-block bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-[10px] px-2 py-0.5 rounded-md font-semibold mt-1">📍 ${esc(c.lugar)}</span>
+                            </div>
+                            <span class="text-[10px] text-[var(--text-muted)]">${esc(c.fecha)}</span>
+                        </div>
+                        <p class="text-xs text-[var(--text-muted)] mt-2 leading-relaxed">${esc(c.texto)}</p>
+                    </div>
+                `;
+            });
+        }
+
+        function publicarComentario(e) {
+            e.preventDefault();
+            const nombre = document.getElementById('foro-nombre').value;
+            const lugar = document.getElementById('foro-lugar').value;
+            const texto = document.getElementById('foro-texto').value;
+
+            const nuevoComentario = {
+                nombre,
+                lugar,
+                texto,
+                fecha: "Hace un momento"
+            };
+
+            let comentarios = obtenerComentarios();
+            comentarios.unshift(nuevoComentario); // Agregar al inicio
+            localStorage.setItem('bolsillou_foro', JSON.stringify(comentarios));
+
+            // Limpiar formulario y recargar foro
+            document.getElementById('foro-nombre').value = '';
+            document.getElementById('foro-lugar').value = '';
+            document.getElementById('foro-texto').value = '';
+            cargarForo();
+            alert("✅ ¡Tu tip ha sido publicado en el foro con éxito!");
+        }
+
         function abrirDetalle(index) {
             const r = listaGlobal[index];
             const modal = document.getElementById('modal-restaurante');
@@ -188,11 +318,8 @@
 
             let platosHtml = '';
             if (!r.platos || r.platos.length === 0) {
-                platosHtml = `<p class="text-xs text-[var(--text-muted)]">Aún no tenemos el menú de este lugar. Nivel de precio: <b>${esc(r.nivel_precio || "N/D")}</b>.</p>
+                platosHtml = `<p class="text-xs text-[var(--text-muted)]">Nivel de precio: <b>${esc(r.nivel_precio || "N/D")}</b>.</p>
                     <button onclick="registrarGastoManual(${index})" class="mt-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-2 rounded-xl font-medium">Registrar un gasto aquí 💸</button>`;
-            }
-            else if (r.es_ejemplo) {
-                platosHtml += `<p class="text-[10px] text-amber-600 mb-2">Datos de ejemplo, no son precios reales.</p>`;
             }
             (r.platos || []).forEach((p, pi) => {
                 platosHtml += `

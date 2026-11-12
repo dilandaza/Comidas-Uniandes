@@ -3,132 +3,146 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BolsilloU - Presupuesto y Foro Estudiantil</title>
+    <title>almorza2 - Presupuesto y Foro Estudiantil</title>
+    <link rel="icon" type="image/png" href="almorza2-olla.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Paleta cálida: "emerald" pasa a ser naranja terracota y "slate" a beige/café
+        tailwind.config = {
+            darkMode: ['variant', '&:where(.dark-mode, .dark-mode *)'],
+            theme: { extend: { colors: {
+                emerald: { 50:'#fdf3e7',100:'#fbe5cc',200:'#f6cb9f',300:'#efab6d',400:'#e78d45',500:'#d9763a',600:'#c8642b',700:'#a94f21',800:'#86401d',900:'#6b351c',950:'#3a1b0c' },
+                slate:   { 50:'#faf5ec',100:'#f3eadb',200:'#eadfca',300:'#d8c9ae',400:'#b5a38c',500:'#8a7766',600:'#6b5a4b',700:'#50443a',800:'#3a3029',900:'#2a2119',950:'#1f1812' }
+            } } }
+        }
+    </script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         :root {
-            --bg-color: #f8fafc;
-            --sidebar-bg: #ffffff;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
-            --border-color: #e2e8f0;
-            --card-bg: #ffffff;
+            --bg-color: #f6efe4;
+            --sidebar-bg: #fcf8f1;
+            --text-main: #3b2f26;
+            --text-muted: #8a7766;
+            --border-color: #e8dcc8;
+            --card-bg: #fcf8f1;
+            --shadow: 0 6px 20px rgba(140, 95, 50, .09);
         }
-        body { background-color: var(--bg-color); color: var(--text-main); font-family: 'Inter', sans-serif; }
         body.dark-mode {
-            --bg-color: #0f172a;
-            --sidebar-bg: #1e293b;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --border-color: #334155;
-            --card-bg: #1e293b;
+            --bg-color: #1f1812;
+            --sidebar-bg: #2a2119;
+            --text-main: #f5ebdc;
+            --text-muted: #b5a38c;
+            --border-color: #473a2d;
+            --card-bg: #2a2119;
+            --shadow: 0 6px 20px rgba(0, 0, 0, .25);
         }
-        body.dark-mode .card, body.dark-mode .budget-box, body.dark-mode .modal-content, body.dark-mode textarea, body.dark-mode select {
-            background-color: var(--card-bg); color: var(--text-main); border-color: var(--border-color);
-        }
-        body.dark-mode input { background-color: #0f172a; color: var(--text-main); border-color: var(--border-color); }
-        #map { height: 300px; width: 100%; border-radius: 1rem; z-index: 1; }
+        body { background-color: var(--bg-color); color: var(--text-main); font-family: 'Nunito', sans-serif; }
+        h1, h2, .font-display { font-family: 'Fraunces', Georgia, serif; letter-spacing: -0.01em; }
+        input, textarea, select { background-color: var(--card-bg); color: var(--text-main); border-color: var(--border-color); }
+        input::placeholder, textarea::placeholder { color: var(--text-muted); opacity: .8; }
+        .card, .budget-box { box-shadow: var(--shadow); }
+        button { transition: background-color .2s, transform .15s; }
+        button:active { transform: scale(.97); }
+        #map { height: 300px; width: 100%; border-radius: 1.5rem; z-index: 1; }
+        .leaflet-tile-pane { filter: sepia(.35) saturate(.85) brightness(1.02); }
+        .leaflet-marker-pane img { filter: hue-rotate(165deg) saturate(1.3); }
+        body.dark-mode .leaflet-tile-pane { filter: invert(.9) hue-rotate(180deg) sepia(.4) brightness(.9); }
     </style>
 </head>
 <body class="flex h-screen overflow-hidden">
 
     <!-- BARRA LATERAL -->
-    <aside class="w-20 bg-[var(--sidebar-bg)] border-r border-[var(--border-color)] flex flex-col items-center py-6 justify-between z-10 shadow-sm">
+    <aside class="w-20 bg-[var(--sidebar-bg)] border-r border-[var(--border-color)] flex flex-col items-center py-6 justify-between z-10">
         <div class="flex flex-col items-center gap-6">
-            <div class="w-10 h-10 bg-emerald-600 text-white font-bold rounded-xl flex items-center justify-center text-lg shadow-md">U</div>
-            <div onclick="cambiarVista('inicio')" class="sidebar-btn w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Restaurantes y Mapa">🍽️</div>
-            <div onclick="cambiarVista('foro')" class="sidebar-btn w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Foro Comunitario">💬</div>
+            <img src="almorza2-olla.png" alt="almorza2" class="w-12 h-12 object-contain">
+            <div onclick="cambiarVista('inicio')" class="w-12 h-12 rounded-full flex items-center justify-center cursor-pointer text-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Restaurantes y Mapa">🍽️</div>
+            <div onclick="cambiarVista('foro')" class="w-12 h-12 rounded-full flex items-center justify-center cursor-pointer text-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Foro Comunitario">💬</div>
         </div>
-        <div class="w-12 h-12 rounded-xl flex items-center justify-center cursor-pointer text-xl hover:bg-slate-100 dark:hover:bg-slate-800" id="btn-config" title="Modo Oscuro">⚙️</div>
+        <div class="w-12 h-12 rounded-full flex items-center justify-center cursor-pointer text-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition" id="btn-config" title="Modo Oscuro">⚙️</div>
     </aside>
 
     <!-- CONTENEDOR PRINCIPAL -->
     <main class="flex-1 flex flex-col h-full overflow-y-auto">
-        <header class="bg-[var(--sidebar-bg)] border-b border-[var(--border-color)] px-8 py-4 flex justify-between items-center shadow-xs">
-            <div>
-                <h1 class="text-xl font-bold" id="titulo-seccion">BolsilloU - Alimentación Inteligente</h1>
-                <p class="text-xs text-[var(--text-muted)]" id="subtitulo-seccion">Encuentra opciones económicas cerca a UniAndes</p>
-            </div>
-            <div class="flex items-center gap-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-4 py-2 rounded-xl">
-                <div>
-                    <p class="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold uppercase">Presupuesto Disponible</p>
-                    <p class="text-lg font-black text-emerald-800 dark:text-emerald-300" id="lbl-saldo-actual">$500.000 COP</p>
+        <header class="bg-[var(--sidebar-bg)] border-b border-[var(--border-color)] px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <img src="almorza2-logotipo.png" alt="almorza2" class="h-11 w-auto">
+                <div class="border-l border-[var(--border-color)] pl-4">
+                    <h1 class="text-lg font-bold leading-tight" id="titulo-seccion">Alimentación Inteligente</h1>
+                    <p class="text-xs text-[var(--text-muted)]" id="subtitulo-seccion">Encuentra opciones económicas cerca a UniAndes</p>
                 </div>
-                <button onclick="ajustarPresupuesto()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1.5 rounded-lg font-medium transition">Ajustar</button>
+            </div>
+            <div class="flex items-center gap-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 pl-5 pr-3 py-2 rounded-full">
+                <div>
+                    <p class="text-[10px] text-emerald-700 dark:text-emerald-300 font-bold uppercase tracking-wide">Presupuesto disponible</p>
+                    <p class="font-display text-lg font-bold text-emerald-800 dark:text-emerald-200" id="lbl-saldo-actual">$500.000 COP</p>
+                </div>
+                <button onclick="ajustarPresupuesto()" class="bg-emerald-200 hover:bg-emerald-300 dark:bg-emerald-800 dark:hover:bg-emerald-700 text-emerald-900 dark:text-emerald-100 text-xs px-4 py-2 rounded-full font-bold">Ajustar</button>
             </div>
         </header>
 
-        <!-- VISTA 1: INICIO (MAPA Y RESTAURANTES) -->
+        <!-- VISTA 1: INICIO -->
         <div id="vista-inicio" class="p-8 max-w-7xl mx-auto w-full flex flex-col gap-6">
-            <div class="budget-box bg-[var(--sidebar-bg)] border border-[var(--border-color)] p-4 rounded-2xl shadow-sm">
-                <h2 class="text-sm font-bold mb-2 flex items-center gap-2">🗺️ Mapa Interactivo - Zona UniAndes</h2>
+            <div class="budget-box bg-[var(--sidebar-bg)] border border-[var(--border-color)] p-4 rounded-3xl">
+                <h2 class="text-base font-bold mb-3 px-1">Mapa · Zona UniAndes</h2>
                 <div id="map"></div>
             </div>
 
-            <div class="budget-box bg-[var(--sidebar-bg)] border border-[var(--border-color)] p-5 rounded-2xl shadow-sm flex gap-4 items-center">
-                <input type="text" id="input-busqueda" placeholder="Buscar por plato o restaurante..." class="flex-1 px-4 py-2 text-sm rounded-xl border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-emerald-500">
-                <button onclick="cargarRestaurantes()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-xl text-sm font-medium transition shadow-sm">Buscar 🔍</button>
+            <div class="budget-box bg-[var(--sidebar-bg)] border border-[var(--border-color)] p-4 rounded-full flex gap-3 items-center">
+                <input type="text" id="input-busqueda" placeholder="Buscar por plato o restaurante..." class="flex-1 px-5 py-2.5 text-sm rounded-full border focus:outline-none focus:ring-2 focus:ring-emerald-300">
+                <button onclick="cargarRestaurantes()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-full text-sm font-bold">Buscar</button>
             </div>
 
-            <!-- BOTONES DE FILTRO RÁPIDO SIMPLIFICADOS -->
-            <div class="flex gap-2 overflow-x-auto pb-1 mb-4">
-                <button onclick="filtrarRestaurantes('todos')" id="btn-filtro-todos" class="bg-emerald-600 text-white text-xs px-4 py-2 rounded-xl font-semibold transition shadow-sm whitespace-nowrap">
-                    🍽️ Todos
-                </button>
-                <button onclick="filtrarRestaurantes('menor_15')" id="btn-filtro-menor_15" class="bg-slate-200 dark:bg-slate-800 text-[var(--text-main)] text-xs px-4 py-2 rounded-xl font-semibold transition shadow-sm whitespace-nowrap">
-                    ⚡ Menor de $15.000 (Económico)
-                </button>
-                <button onclick="filtrarRestaurantes('mayor_15')" id="btn-filtro-mayor_15" class="bg-slate-200 dark:bg-slate-800 text-[var(--text-main)] text-xs px-4 py-2 rounded-xl font-semibold transition shadow-sm whitespace-nowrap">
-                    🥩 Mayor de $15.000 (Especial)
-                </button>
+            <div class="flex gap-2 overflow-x-auto pb-1 mb-2">
+                <button onclick="filtrarRestaurantes('todos')" id="btn-filtro-todos" class="bg-emerald-600 text-white text-xs px-5 py-2.5 rounded-full font-bold whitespace-nowrap">Todos</button>
+                <button onclick="filtrarRestaurantes('menor_15')" id="btn-filtro-menor_15" class="bg-slate-200 dark:bg-slate-800 text-[var(--text-main)] text-xs px-5 py-2.5 rounded-full font-bold whitespace-nowrap">Menor de $15.000 · Económico</button>
+                <button onclick="filtrarRestaurantes('mayor_15')" id="btn-filtro-mayor_15" class="bg-slate-200 dark:bg-slate-800 text-[var(--text-main)] text-xs px-5 py-2.5 rounded-full font-bold whitespace-nowrap">Mayor de $15.000 · Especial</button>
             </div>
 
             <div>
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-lg font-bold">Restaurantes Disponibles</h2>
+                    <h2 class="text-xl font-bold">Restaurantes disponibles</h2>
                     <span class="text-xs text-[var(--text-muted)]" id="contador-resultados">Cargando...</span>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="contenedor-restaurantes"></div>
             </div>
         </div>
 
-        <!-- VISTA 2: FORO ESTUDIANTIL -->
+        <!-- VISTA 2: FORO -->
         <div id="vista-foro" class="p-8 max-w-4xl mx-auto w-full hidden flex-col gap-6">
-            <div class="budget-box bg-[var(--sidebar-bg)] border border-[var(--border-color)] p-6 rounded-2xl shadow-sm">
-                <h2 class="text-base font-bold mb-1">✍️ Comparte un tip o reseña</h2>
+            <div class="budget-box bg-[var(--sidebar-bg)] border border-[var(--border-color)] p-6 rounded-3xl">
+                <h2 class="text-lg font-bold mb-1">Comparte un tip o reseña</h2>
                 <p class="text-xs text-[var(--text-muted)] mb-4">Ayuda a otros uniandinos a encontrar las mejores opciones y cuidar el bolsillo.</p>
-                
+
                 <form onsubmit="publicarComentario(event)" class="space-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs font-semibold mb-1">Tu Nombre o Apodo:</label>
-                            <input type="text" id="foro-nombre" required placeholder="Ej. Ana (Microbiología)" class="w-full px-4 py-2 text-sm rounded-xl border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            <label class="block text-xs font-bold mb-1 ml-2">Tu nombre o apodo</label>
+                            <input type="text" id="foro-nombre" required placeholder="Ej. Ana (Microbiología)" class="w-full px-5 py-2.5 text-sm rounded-full border focus:outline-none focus:ring-2 focus:ring-emerald-300">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold mb-1">Restaurante o Zona:</label>
-                            <input type="text" id="foro-lugar" required placeholder="Ej. La Nena / Cafetería Central" class="w-full px-4 py-2 text-sm rounded-xl border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            <label class="block text-xs font-bold mb-1 ml-2">Restaurante o zona</label>
+                            <input type="text" id="foro-lugar" required placeholder="Ej. La Nena / Cafetería Central" class="w-full px-5 py-2.5 text-sm rounded-full border focus:outline-none focus:ring-2 focus:ring-emerald-300">
                         </div>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold mb-1">Tu Opinión o Tip:</label>
-                        <textarea id="foro-texto" required rows="3" placeholder="Ej. El menú ejecutivo de pollo es gigante y baratísimo, pero vayan antes de las 12:30 porque se llena." class="w-full px-4 py-2 text-sm rounded-xl border border-[var(--border-color)] focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+                        <label class="block text-xs font-bold mb-1 ml-2">Tu opinión o tip</label>
+                        <textarea id="foro-texto" required rows="3" placeholder="Ej. El menú ejecutivo de pollo es gigante y baratísimo, pero vayan antes de las 12:30 porque se llena." class="w-full px-5 py-3 text-sm rounded-3xl border focus:outline-none focus:ring-2 focus:ring-emerald-300"></textarea>
                     </div>
-                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-5 py-2.5 rounded-xl font-semibold transition shadow-sm">
-                        Publicar en el Foro 🚀
-                    </button>
+                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-6 py-2.5 rounded-full font-bold">Publicar en el foro</button>
                 </form>
             </div>
 
-            <!-- LISTA DE PUBLICACIONES -->
             <div class="space-y-4" id="contenedor-foro"></div>
         </div>
     </main>
 
-    <!-- MODAL DE DETALLE DE RESTAURANTE -->
-    <div id="modal-restaurante" class="fixed inset-0 bg-black/60 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
-        <div class="modal-content bg-white dark:bg-slate-900 rounded-3xl max-w-lg w-full p-6 shadow-2xl relative border border-[var(--border-color)] max-h-[90vh] overflow-y-auto">
-            <button onclick="cerrarModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold">✕</button>
+    <!-- MODAL DE DETALLE -->
+    <div id="modal-restaurante" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
+        <div class="bg-[var(--card-bg)] text-[var(--text-main)] rounded-[2rem] max-w-lg w-full p-6 shadow-2xl relative border border-[var(--border-color)] max-h-[90vh] overflow-y-auto">
+            <button onclick="cerrarModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-[var(--text-muted)] hover:bg-slate-200 dark:hover:bg-slate-700 text-sm font-bold z-10">✕</button>
             <div id="modal-body"></div>
         </div>
     </div>
@@ -147,24 +161,18 @@
             maxZoom: 19,
             attribution: '© OpenStreetMap'
         }).addTo(map);
-        
+
         let marcadoresLayer = L.layerGroup().addTo(map);
         let listaGlobal = [];
 
-        // Datos de respaldo iniciales para garantizar que la app nunca quede en blanco si Render está despertando
+        // Datos de respaldo para que la app nunca quede en blanco si Render está despertando
         const datosRespaldo = [
             {
-                nombre: "La Nena Restaurante", 
-                direccion: "Calle 19A # 1-28, Bogotá",
-                calificacion: 4.6, 
-                total_reviews: 128, 
-                id_lugar: "rest_1", 
-                abierto: true,
-                lat: 4.6025, 
-                lng: -74.0665, 
-                foto: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80", 
-                nivel_precio: "$$", 
-                es_ejemplo: true,
+                nombre: "La Nena Restaurante", direccion: "Calle 19A # 1-28, Bogotá",
+                calificacion: 4.6, total_reviews: 128, id_lugar: "rest_1", abierto: true,
+                lat: 4.6025, lng: -74.0665,
+                foto: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80",
+                nivel_precio: "$$", es_ejemplo: true,
                 platos: [
                     { nombre: "Menú Ejecutivo del Día", precio: 12000, descripcion: "Sopa, plato principal con carne o pollo, arroz, ensalada y jugo." },
                     { nombre: "Parrillada Especial de la Casa", precio: 24000, descripcion: "Corte de res a la parrilla, chorizo, papa criolla, arepa y chimichurri." }
@@ -172,17 +180,11 @@
                 resenas: [{ usuario: "Sofía G. (Derecho)", estrellas: 5, comentario: "¡Excelente porción y súper económico!" }]
             },
             {
-                nombre: "Wok & Bowl UniAndes", 
-                direccion: "Cra. 1 #18A-12, Bogotá",
-                calificacion: 4.8, 
-                total_reviews: 95, 
-                id_lugar: "rest_2", 
-                abierto: true,
-                lat: 4.6020, 
-                lng: -74.0660, 
-                foto: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80", 
-                nivel_precio: "$$", 
-                es_ejemplo: true,
+                nombre: "Wok & Bowl UniAndes", direccion: "Cra. 1 #18A-12, Bogotá",
+                calificacion: 4.8, total_reviews: 95, id_lugar: "rest_2", abierto: true,
+                lat: 4.6020, lng: -74.0660,
+                foto: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80",
+                nivel_precio: "$$", es_ejemplo: true,
                 platos: [
                     { nombre: "Bowl Universitario", precio: 15000, descripcion: "Base de arroz o quinua, proteína a elección y aguacate." },
                     { nombre: "Hamburguesa Artesanal Doble", precio: 22000, descripcion: "Doble carne angus, queso cheddar fundido, tocineta y papas rústicas." }
@@ -190,17 +192,11 @@
                 resenas: [{ usuario: "Daniel M. (Ingeniería)", estrellas: 5, comentario: "La hamburguesa vale totalmente la pena cuando hay presupuesto." }]
             },
             {
-                nombre: "Trattoria del Campus", 
-                direccion: "Calle 19 # 2-30, Bogotá",
-                calificacion: 4.7, 
-                total_reviews: 80, 
-                id_lugar: "rest_3", 
-                abierto: true,
-                lat: 4.6010, 
-                lng: -74.0670, 
-                foto: "https://images.unsplash.com/photo-1543353071-10c8ba85a904?auto=format&fit=crop&w=600&q=80", 
-                nivel_precio: "$$", 
-                es_ejemplo: true,
+                nombre: "Trattoria del Campus", direccion: "Calle 19 # 2-30, Bogotá",
+                calificacion: 4.7, total_reviews: 80, id_lugar: "rest_3", abierto: true,
+                lat: 4.6010, lng: -74.0670,
+                foto: "https://images.unsplash.com/photo-1543353071-10c8ba85a904?auto=format&fit=crop&w=600&q=80",
+                nivel_precio: "$$", es_ejemplo: true,
                 platos: [
                     { nombre: "Pasta Casera Boloñesa", precio: 14000, descripcion: "Porción generosa de pasta con salsa de carne tradicional y queso parmesano." },
                     { nombre: "Lomo de Cerdo en Salsa BBQ", precio: 21000, descripcion: "Jugoso lomo bañado en salsa BBQ artesanal con puré de papa." }
@@ -220,7 +216,7 @@
                 vInicio.classList.add('flex');
                 vForo.classList.remove('flex');
                 vForo.classList.add('hidden');
-                tit.innerText = "BolsilloU - Alimentación Inteligente";
+                tit.innerText = "Alimentación Inteligente";
                 sub.innerText = "Encuentra opciones económicas cerca a UniAndes";
                 setTimeout(() => { map.invalidateSize(); }, 200);
             } else {
@@ -228,7 +224,7 @@
                 vInicio.classList.add('hidden');
                 vForo.classList.remove('hidden');
                 vForo.classList.add('flex');
-                tit.innerText = "BolsilloU - Foro Comunitario";
+                tit.innerText = "Foro Comunitario";
                 sub.innerText = "Comparte y lee tips de otros estudiantes de la universidad";
                 cargarForo();
             }
@@ -246,11 +242,10 @@
 
         async function cargarRestaurantes() {
             const query = document.getElementById('input-busqueda').value || "almuerzo";
-            
-            // Cargar datos de respaldo inmediatos para fluidez
+
             listaGlobal = datosRespaldo;
             aplicarFiltroYRenderizar();
-            
+
             try {
                 const response = await fetch(`${API_URL}/api/restaurantes?query=${encodeURIComponent(query)}`);
                 if (response.ok) {
@@ -266,39 +261,25 @@
         }
 
         let tipoFiltroActual = 'todos';
+        const CLASE_ACTIVO = "bg-emerald-600 text-white text-xs px-5 py-2.5 rounded-full font-bold whitespace-nowrap";
+        const CLASE_INACTIVO = "bg-slate-200 dark:bg-slate-800 text-[var(--text-main)] text-xs px-5 py-2.5 rounded-full font-bold whitespace-nowrap";
 
         function filtrarRestaurantes(tipo) {
             tipoFiltroActual = tipo;
-            
-            const ids = ['todos', 'menor_15', 'mayor_15'];
-            ids.forEach(id => {
+            ['todos', 'menor_15', 'mayor_15'].forEach(id => {
                 const btn = document.getElementById(`btn-filtro-${id}`);
-                if (!btn) return;
-                if (id === tipo) {
-                    btn.className = "bg-emerald-600 text-white text-xs px-4 py-2 rounded-xl font-semibold transition shadow-sm whitespace-nowrap";
-                } else {
-                    btn.className = "bg-slate-200 dark:bg-slate-800 text-[var(--text-main)] text-xs px-4 py-2 rounded-xl font-semibold transition shadow-sm whitespace-nowrap";
-                }
+                if (btn) btn.className = id === tipo ? CLASE_ACTIVO : CLASE_INACTIVO;
             });
-
             aplicarFiltroYRenderizar();
         }
 
         function aplicarFiltroYRenderizar() {
             let listaFiltrada = [...listaGlobal];
-
             if (tipoFiltroActual === 'menor_15') {
-                // Muestra SOLO los restaurantes que tengan al menos un plato menor o igual a $15.000
-                listaFiltrada = listaFiltrada.filter(r => {
-                    return r.platos && r.platos.some(p => Number(p.precio) <= 15000);
-                });
+                listaFiltrada = listaFiltrada.filter(r => r.platos && r.platos.some(p => Number(p.precio) <= 15000));
             } else if (tipoFiltroActual === 'mayor_15') {
-                // Muestra SOLO los restaurantes que tengan al menos un plato estrictamente mayor a $15.000
-                listaFiltrada = listaFiltrada.filter(r => {
-                    return r.platos && r.platos.some(p => Number(p.precio) > 15000);
-                });
+                listaFiltrada = listaFiltrada.filter(r => r.platos && r.platos.some(p => Number(p.precio) > 15000));
             }
-
             renderizarApp(listaFiltrada);
         }
 
@@ -310,8 +291,8 @@
 
             const uniIcon = L.divIcon({
                 className: 'custom-uni-icon',
-                html: '<div style="background-color: #10b981; color: white; padding: 5px 8px; border-radius: 8px; font-weight: bold; font-size: 11px; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">🎓 UniAndes</div>',
-                iconSize: [70, 30]
+                html: '<div style="background-color: #c8642b; color: white; padding: 5px 10px; border-radius: 999px; font-weight: 700; font-size: 11px; box-shadow: 0 2px 6px rgba(80,40,10,0.3);">🎓 UniAndes</div>',
+                iconSize: [80, 30]
             });
             const uniMarker = L.marker([4.6017, -74.0662], { icon: uniIcon }).bindPopup("<b>Universidad de los Andes</b>");
             marcadoresLayer.addLayer(uniMarker);
@@ -327,19 +308,19 @@
                 group.addLayer(marker);
 
                 contenedor.innerHTML += `
-                    <div class="card bg-[var(--sidebar-bg)] border border-[var(--border-color)] rounded-2xl overflow-hidden shadow-xs flex flex-col justify-between transition hover:shadow-md">
-                        <img src="${fotoUrl}" alt="${esc(r.nombre)}" class="w-full h-36 object-cover">
-                        <div class="p-4 flex flex-col flex-1 justify-between">
+                    <div class="card bg-[var(--sidebar-bg)] border border-[var(--border-color)] rounded-3xl overflow-hidden flex flex-col justify-between transition hover:-translate-y-0.5">
+                        <img src="${esc(fotoUrl)}" alt="${esc(r.nombre)}" class="w-full h-36 object-cover">
+                        <div class="p-5 flex flex-col flex-1 justify-between">
                             <div>
-                                <div class="flex justify-between items-start mb-1">
-                                    <h3 class="font-bold text-sm line-clamp-1">${esc(r.nombre)}</h3>
-                                    <span class="bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 text-[10px] px-2 py-0.5 rounded-md font-semibold">⭐ ${esc(r.calificacion)}</span>
+                                <div class="flex justify-between items-start mb-1 gap-2">
+                                    <h3 class="font-display font-bold text-base line-clamp-1">${esc(r.nombre)}</h3>
+                                    <span class="bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 text-[10px] px-2.5 py-1 rounded-full font-bold whitespace-nowrap">⭐ ${esc(r.calificacion)}</span>
                                 </div>
-                                <p class="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium mb-1">📍 ${esc(r.direccion)}</p>
-                                <p class="text-[11px] text-[var(--text-muted)] mb-3">Precio: ${esc(r.nivel_precio || "N/D")}</p>
+                                <p class="text-[11px] text-emerald-700 dark:text-emerald-300 font-semibold mb-1">📍 ${esc(r.direccion)}</p>
+                                <p class="text-[11px] text-[var(--text-muted)] mb-4">Precio: ${esc(r.nivel_precio || "N/D")}</p>
                             </div>
-                            <button onclick="abrirDetalle(${index})" class="w-full bg-slate-900 hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white text-xs py-2 rounded-xl font-medium transition shadow-sm">
-                                Ver Menú y Precios 👁️
+                            <button onclick="abrirDetalle(${index})" class="w-full bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-800 dark:hover:bg-emerald-700 text-emerald-900 dark:text-emerald-100 text-xs py-2.5 rounded-full font-bold">
+                                Ver menú y precios
                             </button>
                         </div>
                     </div>
@@ -350,20 +331,18 @@
             document.getElementById('contador-resultados').innerText = `Mostrando ${lista.length} opciones`;
         }
 
-        // LÓGICA DEL FORO ESTUDIANTIL
+        // FORO ESTUDIANTIL
         function obtenerComentarios() {
             let guardados = localStorage.getItem('bolsillou_foro');
             if (guardados) return JSON.parse(guardados);
             return [
                 {
-                    nombre: "Camila R. (Ingeniería)",
-                    lugar: "La Nena Restaurante",
+                    nombre: "Camila R. (Ingeniería)", lugar: "La Nena Restaurante",
                     texto: "El almuerzo ejecutivo vale totalmente la pena por $13k. Tip: pidan el jugo en leche si hay disponible.",
                     fecha: "Hace 2 horas"
                 },
                 {
-                    nombre: "Mateo S. (Administración)",
-                    lugar: "Cafetería Central UniAndes",
+                    nombre: "Mateo S. (Administración)", lugar: "Cafetería Central UniAndes",
                     texto: "Para los días de parciales donde no hay tiempo de salir del campus, el menú económico de la central salva la vida.",
                     fecha: "Ayer"
                 }
@@ -382,15 +361,15 @@
 
             comentarios.forEach((c) => {
                 contenedor.innerHTML += `
-                    <div class="budget-box bg-[var(--sidebar-bg)] border border-[var(--border-color)] p-4 rounded-2xl shadow-sm">
+                    <div class="budget-box bg-[var(--sidebar-bg)] border border-[var(--border-color)] p-5 rounded-3xl">
                         <div class="flex justify-between items-start mb-2">
                             <div>
-                                <h3 class="font-bold text-xs text-[var(--text-main)]">${esc(c.nombre)}</h3>
-                                <span class="inline-block bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-[10px] px-2 py-0.5 rounded-md font-semibold mt-1">📍 ${esc(c.lugar)}</span>
+                                <h3 class="font-bold text-sm text-[var(--text-main)]">${esc(c.nombre)}</h3>
+                                <span class="inline-block bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-[10px] px-2.5 py-1 rounded-full font-bold mt-1">📍 ${esc(c.lugar)}</span>
                             </div>
                             <span class="text-[10px] text-[var(--text-muted)]">${esc(c.fecha)}</span>
                         </div>
-                        <p class="text-xs text-[var(--text-muted)] mt-2 leading-relaxed">${esc(c.texto)}</p>
+                        <p class="text-sm text-[var(--text-muted)] mt-2 leading-relaxed">${esc(c.texto)}</p>
                     </div>
                 `;
             });
@@ -427,7 +406,6 @@
                 ]);
             }
 
-            // Renderizar Platos filtrados según el botón activo
             let platosHtml = '';
             let platosAMostrar = r.platos || [];
 
@@ -440,17 +418,18 @@
             if (platosAMostrar.length === 0) {
                 platosHtml = `<p class="text-xs text-[var(--text-muted)] italic">No hay platos en este rango de precio para este local.</p>`;
             } else {
-                platosAMostrar.forEach((p, pi) => {
+                platosAMostrar.forEach((p) => {
+                    const pi = r.platos.indexOf(p);
                     platosHtml += `
-                        <div class="bg-slate-50 dark:bg-slate-800 p-3 rounded-2xl flex justify-between items-center gap-3 border border-[var(--border-color)]">
+                        <div class="bg-slate-50 dark:bg-slate-800 p-4 rounded-3xl flex justify-between items-center gap-3 border border-[var(--border-color)]">
                             <div class="flex-1">
-                                <h4 class="font-bold text-xs text-[var(--text-main)]">${esc(p.nombre)}</h4>
+                                <h4 class="font-bold text-sm text-[var(--text-main)]">${esc(p.nombre)}</h4>
                                 <p class="text-[11px] text-[var(--text-muted)] mt-0.5">${esc(p.descripcion)}</p>
                             </div>
                             <div class="text-right">
-                                <span class="text-xs font-black text-emerald-600 dark:text-emerald-400 block">$${p.precio.toLocaleString()}</span>
-                                <button onclick="registrarGasto(${p.precio}, ${index}, ${pi})" class="mt-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] px-3 py-1.5 rounded-xl font-medium transition shadow-sm">
-                                    Pedir 💸
+                                <span class="font-display text-sm font-bold text-emerald-700 dark:text-emerald-300 block">$${Number(p.precio).toLocaleString()}</span>
+                                <button onclick="registrarGasto(${Number(p.precio)}, ${index}, ${pi})" class="mt-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] px-4 py-1.5 rounded-full font-bold">
+                                    Pedir
                                 </button>
                             </div>
                         </div>
@@ -462,7 +441,7 @@
             r.resenasDinamicas.forEach((res) => {
                 const estrellasItem = "⭐".repeat(res.estrellas || 5);
                 resenasHtml += `
-                    <div class="bg-slate-50/70 dark:bg-slate-800/50 p-3 rounded-2xl border border-[var(--border-color)]">
+                    <div class="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-3xl border border-[var(--border-color)]">
                         <div class="flex justify-between items-center mb-1">
                             <span class="font-bold text-xs text-[var(--text-main)]">${esc(res.usuario)}</span>
                             <span class="text-xs">${estrellasItem}</span>
@@ -476,36 +455,33 @@
             const lng = r.lng || -74.0662;
             const linkGoogleMaps = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
             const linkWaze = `https://www.waze.com/ul?ll=${lat},${lng}&navigate=yes`;
+            const claseLink = "flex-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-[var(--text-main)] text-xs py-2.5 px-3 rounded-full font-bold text-center transition";
 
             body.innerHTML = `
-                <img src="${esc(r.foto || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80')}" class="w-full h-48 object-cover rounded-2xl mb-4">
-                <div class="flex justify-between items-start mb-2">
-                    <h2 class="text-lg font-bold">${esc(r.nombre)}</h2>
-                    <span class="bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 text-xs px-2.5 py-1 rounded-lg font-semibold">⭐ ${esc(r.calificacion)}</span>
+                <img src="${esc(r.foto || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80')}" class="w-full h-48 object-cover rounded-3xl mb-4">
+                <div class="flex justify-between items-start mb-2 gap-2">
+                    <h2 class="text-2xl font-bold">${esc(r.nombre)}</h2>
+                    <span class="bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 text-xs px-3 py-1 rounded-full font-bold whitespace-nowrap">⭐ ${esc(r.calificacion)}</span>
                 </div>
-                <p class="text-xs text-emerald-600 dark:text-emerald-400 font-medium mb-3">📍 ${esc(r.direccion)}</p>
-                
+                <p class="text-xs text-emerald-700 dark:text-emerald-300 font-semibold mb-3">📍 ${esc(r.direccion)}</p>
+
                 <div class="flex gap-2 mb-6">
-                    <a href="${linkGoogleMaps}" target="_blank" class="flex-1 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 text-xs py-2 px-3 rounded-xl font-semibold text-center hover:bg-blue-100 transition flex items-center justify-center gap-1.5">
-                        🗺️ Google Maps
-                    </a>
-                    <a href="${linkWaze}" target="_blank" class="flex-1 bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 text-sky-700 dark:text-sky-300 text-xs py-2 px-3 rounded-xl font-semibold text-center hover:bg-sky-100 transition flex items-center justify-center gap-1.5">
-                        🚗 Waze
-                    </a>
+                    <a href="${linkGoogleMaps}" target="_blank" rel="noopener" class="${claseLink}">Google Maps</a>
+                    <a href="${linkWaze}" target="_blank" rel="noopener" class="${claseLink}">Waze</a>
                 </div>
 
-                <h3 class="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-3">Platos y Precios:</h3>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-3">Platos y precios</h3>
                 <div class="space-y-3 mb-6">${platosHtml}</div>
 
-                <h3 class="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-3">Reseñas de la Comunidad:</h3>
+                <h3 class="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-3">Reseñas de la comunidad</h3>
                 <div class="space-y-3 mb-6">${resenasHtml}</div>
 
-                <div class="bg-emerald-50/50 dark:bg-emerald-950/20 p-4 rounded-2xl border border-emerald-200 dark:border-emerald-800">
-                    <h4 class="font-bold text-xs text-emerald-800 dark:text-emerald-300 mb-2">✍️ Deja tu propia reseña</h4>
+                <div class="bg-emerald-50 dark:bg-emerald-950/30 p-4 rounded-3xl border border-emerald-200 dark:border-emerald-800">
+                    <h4 class="font-bold text-sm text-emerald-800 dark:text-emerald-200 mb-2">Deja tu propia reseña</h4>
                     <form onsubmit="agregarResenaDirecta(event, ${index})" class="space-y-3">
                         <div class="grid grid-cols-2 gap-2">
-                            <input type="text" id="modal-user-name" required placeholder="Tu nombre y carrera" class="px-3 py-1.5 text-xs rounded-xl border border-[var(--border-color)]">
-                            <select id="modal-user-stars" class="px-3 py-1.5 text-xs rounded-xl border border-[var(--border-color)]">
+                            <input type="text" id="modal-user-name" required placeholder="Tu nombre y carrera" class="px-4 py-2 text-xs rounded-full border">
+                            <select id="modal-user-stars" class="px-4 py-2 text-xs rounded-full border">
                                 <option value="5">⭐⭐⭐⭐⭐ (5/5)</option>
                                 <option value="4">⭐⭐⭐⭐ (4/5)</option>
                                 <option value="3">⭐⭐⭐ (3/5)</option>
@@ -513,9 +489,9 @@
                                 <option value="1">⭐ (1/5)</option>
                             </select>
                         </div>
-                        <textarea id="modal-user-comment" required rows="2" placeholder="¿Qué tal el plato y el precio?" class="w-full px-3 py-1.5 text-xs rounded-xl border border-[var(--border-color)]"></textarea>
-                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs py-2 rounded-xl font-medium transition shadow-sm">
-                            Publicar Reseña 🚀
+                        <textarea id="modal-user-comment" required rows="2" placeholder="¿Qué tal el plato y el precio?" class="w-full px-4 py-2 text-xs rounded-2xl border"></textarea>
+                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs py-2.5 rounded-full font-bold">
+                            Publicar reseña
                         </button>
                     </form>
                 </div>

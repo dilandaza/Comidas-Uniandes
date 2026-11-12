@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>almorza2 - Presupuesto y Foro Estudiantil</title>
     <link rel="icon" type="image/png" href="almorza2-olla.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -39,6 +39,7 @@
             --card-bg: #2a2119;
             --shadow: 0 6px 20px rgba(0, 0, 0, .25);
         }
+        html, body { overflow-x: hidden; }
         body { background-color: var(--bg-color); color: var(--text-main); font-family: 'Nunito', sans-serif; }
         h1, h2, .font-display { font-family: 'Fraunces', Georgia, serif; letter-spacing: -0.01em; }
         input, textarea, select { background-color: var(--card-bg); color: var(--text-main); border-color: var(--border-color); }
@@ -50,31 +51,42 @@
         .leaflet-tile-pane { filter: sepia(.35) saturate(.85) brightness(1.02); }
         .leaflet-marker-pane img { filter: hue-rotate(165deg) saturate(1.3); }
         body.dark-mode .leaflet-tile-pane { filter: invert(.9) hue-rotate(180deg) sepia(.4) brightness(.9); }
+
+        /* ---- AJUSTES PARA CELULAR ---- */
+        .nav-bar { padding-bottom: calc(.5rem + env(safe-area-inset-bottom, 0px)); }
+        .filtros { scrollbar-width: none; }
+        .filtros::-webkit-scrollbar { display: none; }
+        @media (max-width: 767px) {
+            #map { height: 230px; border-radius: 1.25rem; }
+            /* 16px evita el zoom automático de iOS al tocar un campo */
+            input, textarea, select { font-size: 16px !important; }
+            .nav-icon { width: 3rem; height: 3rem; }
+        }
     </style>
 </head>
-<body class="flex h-screen overflow-hidden">
+<body class="flex flex-col-reverse md:flex-row h-[100dvh] overflow-hidden">
 
-    <!-- BARRA LATERAL -->
-    <aside class="w-20 bg-[var(--sidebar-bg)] border-r border-[var(--border-color)] flex flex-col items-center py-6 justify-between z-10">
-        <div class="flex flex-col items-center gap-6">
-            <img src="almorza2-olla.png" alt="almorza2" class="w-12 h-12 object-contain">
-            <div onclick="cambiarVista('inicio')" class="w-12 h-12 rounded-full flex items-center justify-center cursor-pointer text-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Restaurantes y Mapa">🍽️</div>
-            <div onclick="cambiarVista('foro')" class="w-12 h-12 rounded-full flex items-center justify-center cursor-pointer text-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Foro Comunitario">💬</div>
+    <!-- BARRA LATERAL (en celular pasa a barra inferior) -->
+    <aside class="nav-bar w-full md:w-20 bg-[var(--sidebar-bg)] border-t md:border-t-0 md:border-r border-[var(--border-color)] flex flex-row md:flex-col items-center justify-around md:justify-between pt-2 md:py-6 z-10 shrink-0">
+        <div class="contents md:flex md:flex-col md:items-center md:gap-6">
+            <img src="almorza2-olla.png" alt="almorza2" class="hidden md:block w-12 h-12 object-contain">
+            <div onclick="cambiarVista('inicio')" class="nav-icon w-12 h-12 rounded-full flex items-center justify-center cursor-pointer text-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Restaurantes y Mapa">🍽️</div>
+            <div onclick="cambiarVista('foro')" class="nav-icon w-12 h-12 rounded-full flex items-center justify-center cursor-pointer text-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Foro Comunitario">💬</div>
         </div>
-        <div class="w-12 h-12 rounded-full flex items-center justify-center cursor-pointer text-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition" id="btn-config" title="Modo Oscuro">⚙️</div>
+        <div class="nav-icon w-12 h-12 rounded-full flex items-center justify-center cursor-pointer text-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition" id="btn-config" title="Modo Oscuro">⚙️</div>
     </aside>
 
     <!-- CONTENEDOR PRINCIPAL -->
-    <main class="flex-1 flex flex-col h-full overflow-y-auto">
-        <header class="bg-[var(--sidebar-bg)] border-b border-[var(--border-color)] px-8 py-4 flex justify-between items-center">
-            <div class="flex items-center gap-4">
-                <img src="almorza2-logotipo.png" alt="almorza2" class="h-11 w-auto">
-                <div class="border-l border-[var(--border-color)] pl-4">
-                    <h1 class="text-lg font-bold leading-tight" id="titulo-seccion">Alimentación Inteligente</h1>
-                    <p class="text-xs text-[var(--text-muted)]" id="subtitulo-seccion">Encuentra opciones económicas cerca a UniAndes</p>
+    <main class="flex-1 min-w-0 flex flex-col h-full overflow-y-auto">
+        <header class="bg-[var(--sidebar-bg)] border-b border-[var(--border-color)] px-4 md:px-8 py-3 md:py-4 flex flex-col md:flex-row gap-3 md:gap-4 md:justify-between md:items-center">
+            <div class="flex items-center gap-3 md:gap-4 min-w-0">
+                <img src="almorza2-logotipo.png" alt="almorza2" class="h-9 md:h-11 w-auto shrink-0">
+                <div class="border-l border-[var(--border-color)] pl-3 md:pl-4 min-w-0">
+                    <h1 class="text-base md:text-lg font-bold leading-tight" id="titulo-seccion">Alimentación Inteligente</h1>
+                    <p class="text-[11px] md:text-xs text-[var(--text-muted)]" id="subtitulo-seccion">Encuentra opciones económicas cerca a UniAndes</p>
                 </div>
             </div>
-            <div class="flex items-center gap-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 pl-5 pr-3 py-2 rounded-full">
+            <div class="flex items-center justify-between md:justify-start gap-4 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 pl-5 pr-3 py-2 rounded-full">
                 <div>
                     <p class="text-[10px] text-emerald-700 dark:text-emerald-300 font-bold uppercase tracking-wide">Presupuesto disponible</p>
                     <p class="font-display text-lg font-bold text-emerald-800 dark:text-emerald-200" id="lbl-saldo-actual">$500.000 COP</p>
@@ -84,35 +96,35 @@
         </header>
 
         <!-- VISTA 1: INICIO -->
-        <div id="vista-inicio" class="p-8 max-w-7xl mx-auto w-full flex flex-col gap-6">
-            <div class="budget-box bg-[var(--sidebar-bg)] border border-[var(--border-color)] p-4 rounded-3xl">
+        <div id="vista-inicio" class="p-4 md:p-8 max-w-7xl mx-auto w-full flex flex-col gap-4 md:gap-6">
+            <div class="budget-box bg-[var(--sidebar-bg)] border border-[var(--border-color)] p-3 md:p-4 rounded-3xl">
                 <h2 class="text-base font-bold mb-3 px-1">Mapa · Zona UniAndes</h2>
                 <div id="map"></div>
             </div>
 
-            <div class="budget-box bg-[var(--sidebar-bg)] border border-[var(--border-color)] p-4 rounded-full flex gap-3 items-center">
-                <input type="text" id="input-busqueda" placeholder="Buscar por plato o restaurante..." class="flex-1 px-5 py-2.5 text-sm rounded-full border focus:outline-none focus:ring-2 focus:ring-emerald-300">
-                <button onclick="cargarRestaurantes()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-full text-sm font-bold">Buscar</button>
+            <div class="budget-box bg-[var(--sidebar-bg)] border border-[var(--border-color)] p-2 md:p-4 rounded-full flex gap-2 md:gap-3 items-center">
+                <input type="text" id="input-busqueda" placeholder="Buscar por plato o restaurante..." class="flex-1 min-w-0 px-4 md:px-5 py-2.5 text-sm rounded-full border focus:outline-none focus:ring-2 focus:ring-emerald-300">
+                <button onclick="cargarRestaurantes()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 md:px-6 py-2.5 rounded-full text-sm font-bold shrink-0">Buscar</button>
             </div>
 
-            <div class="flex gap-2 overflow-x-auto pb-1 mb-2">
+            <div class="filtros flex gap-2 overflow-x-auto pb-1 md:mb-2 -mx-4 px-4 md:mx-0 md:px-0">
                 <button onclick="filtrarRestaurantes('todos')" id="btn-filtro-todos" class="bg-emerald-600 text-white text-xs px-5 py-2.5 rounded-full font-bold whitespace-nowrap">Todos</button>
                 <button onclick="filtrarRestaurantes('menor_15')" id="btn-filtro-menor_15" class="bg-slate-200 dark:bg-slate-800 text-[var(--text-main)] text-xs px-5 py-2.5 rounded-full font-bold whitespace-nowrap">Menor de $15.000 · Económico</button>
                 <button onclick="filtrarRestaurantes('mayor_15')" id="btn-filtro-mayor_15" class="bg-slate-200 dark:bg-slate-800 text-[var(--text-main)] text-xs px-5 py-2.5 rounded-full font-bold whitespace-nowrap">Mayor de $15.000 · Especial</button>
             </div>
 
             <div>
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold">Restaurantes disponibles</h2>
-                    <span class="text-xs text-[var(--text-muted)]" id="contador-resultados">Cargando...</span>
+                <div class="flex justify-between items-center mb-3 md:mb-4 gap-2">
+                    <h2 class="text-lg md:text-xl font-bold">Restaurantes disponibles</h2>
+                    <span class="text-xs text-[var(--text-muted)] whitespace-nowrap" id="contador-resultados">Cargando...</span>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="contenedor-restaurantes"></div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6" id="contenedor-restaurantes"></div>
             </div>
         </div>
 
         <!-- VISTA 2: FORO -->
-        <div id="vista-foro" class="p-8 max-w-4xl mx-auto w-full hidden flex-col gap-6">
-            <div class="budget-box bg-[var(--sidebar-bg)] border border-[var(--border-color)] p-6 rounded-3xl">
+        <div id="vista-foro" class="p-4 md:p-8 max-w-4xl mx-auto w-full hidden flex-col gap-4 md:gap-6">
+            <div class="budget-box bg-[var(--sidebar-bg)] border border-[var(--border-color)] p-4 md:p-6 rounded-3xl">
                 <h2 class="text-lg font-bold mb-1">Comparte un tip o reseña</h2>
                 <p class="text-xs text-[var(--text-muted)] mb-4">Ayuda a otros uniandinos a encontrar las mejores opciones y cuidar el bolsillo.</p>
 
@@ -131,7 +143,7 @@
                         <label class="block text-xs font-bold mb-1 ml-2">Tu opinión o tip</label>
                         <textarea id="foro-texto" required rows="3" placeholder="Ej. El menú ejecutivo de pollo es gigante y baratísimo, pero vayan antes de las 12:30 porque se llena." class="w-full px-5 py-3 text-sm rounded-3xl border focus:outline-none focus:ring-2 focus:ring-emerald-300"></textarea>
                     </div>
-                    <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-6 py-2.5 rounded-full font-bold">Publicar en el foro</button>
+                    <button type="submit" class="w-full md:w-auto bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-6 py-3 md:py-2.5 rounded-full font-bold">Publicar en el foro</button>
                 </form>
             </div>
 
@@ -140,9 +152,9 @@
     </main>
 
     <!-- MODAL DE DETALLE -->
-    <div id="modal-restaurante" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-4">
-        <div class="bg-[var(--card-bg)] text-[var(--text-main)] rounded-[2rem] max-w-lg w-full p-6 shadow-2xl relative border border-[var(--border-color)] max-h-[90vh] overflow-y-auto">
-            <button onclick="cerrarModal()" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-[var(--text-muted)] hover:bg-slate-200 dark:hover:bg-slate-700 text-sm font-bold z-10">✕</button>
+    <div id="modal-restaurante" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50 p-3 md:p-4">
+        <div class="bg-[var(--card-bg)] text-[var(--text-main)] rounded-[1.75rem] md:rounded-[2rem] max-w-lg w-full p-4 md:p-6 shadow-2xl relative border border-[var(--border-color)] max-h-[92dvh] overflow-y-auto">
+            <button onclick="cerrarModal()" class="absolute top-3 right-3 md:top-4 md:right-4 w-9 h-9 md:w-8 md:h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-[var(--text-muted)] hover:bg-slate-200 dark:hover:bg-slate-700 text-sm font-bold z-10">✕</button>
             <div id="modal-body"></div>
         </div>
     </div>
@@ -228,6 +240,7 @@
                 sub.innerText = "Comparte y lee tips de otros estudiantes de la universidad";
                 cargarForo();
             }
+            document.querySelector('main').scrollTo({ top: 0 });
         }
 
         // Modo Oscuro
@@ -309,7 +322,7 @@
 
                 contenedor.innerHTML += `
                     <div class="card bg-[var(--sidebar-bg)] border border-[var(--border-color)] rounded-3xl overflow-hidden flex flex-col justify-between transition hover:-translate-y-0.5">
-                        <img src="${esc(fotoUrl)}" alt="${esc(r.nombre)}" class="w-full h-36 object-cover">
+                        <img src="${esc(fotoUrl)}" alt="${esc(r.nombre)}" class="w-full h-40 sm:h-36 object-cover">
                         <div class="p-5 flex flex-col flex-1 justify-between">
                             <div>
                                 <div class="flex justify-between items-start mb-1 gap-2">
@@ -319,7 +332,7 @@
                                 <p class="text-[11px] text-emerald-700 dark:text-emerald-300 font-semibold mb-1">📍 ${esc(r.direccion)}</p>
                                 <p class="text-[11px] text-[var(--text-muted)] mb-4">Precio: ${esc(r.nivel_precio || "N/D")}</p>
                             </div>
-                            <button onclick="abrirDetalle(${index})" class="w-full bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-800 dark:hover:bg-emerald-700 text-emerald-900 dark:text-emerald-100 text-xs py-2.5 rounded-full font-bold">
+                            <button onclick="abrirDetalle(${index})" class="w-full bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-800 dark:hover:bg-emerald-700 text-emerald-900 dark:text-emerald-100 text-xs py-3 md:py-2.5 rounded-full font-bold">
                                 Ver menú y precios
                             </button>
                         </div>
@@ -361,15 +374,15 @@
 
             comentarios.forEach((c) => {
                 contenedor.innerHTML += `
-                    <div class="budget-box bg-[var(--sidebar-bg)] border border-[var(--border-color)] p-5 rounded-3xl">
-                        <div class="flex justify-between items-start mb-2">
-                            <div>
+                    <div class="budget-box bg-[var(--sidebar-bg)] border border-[var(--border-color)] p-4 md:p-5 rounded-3xl">
+                        <div class="flex justify-between items-start gap-3 mb-2">
+                            <div class="min-w-0">
                                 <h3 class="font-bold text-sm text-[var(--text-main)]">${esc(c.nombre)}</h3>
                                 <span class="inline-block bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-[10px] px-2.5 py-1 rounded-full font-bold mt-1">📍 ${esc(c.lugar)}</span>
                             </div>
-                            <span class="text-[10px] text-[var(--text-muted)]">${esc(c.fecha)}</span>
+                            <span class="text-[10px] text-[var(--text-muted)] whitespace-nowrap">${esc(c.fecha)}</span>
                         </div>
-                        <p class="text-sm text-[var(--text-muted)] mt-2 leading-relaxed">${esc(c.texto)}</p>
+                        <p class="text-sm text-[var(--text-muted)] mt-2 leading-relaxed break-words">${esc(c.texto)}</p>
                     </div>
                 `;
             });
@@ -422,13 +435,13 @@
                     const pi = r.platos.indexOf(p);
                     platosHtml += `
                         <div class="bg-slate-50 dark:bg-slate-800 p-4 rounded-3xl flex justify-between items-center gap-3 border border-[var(--border-color)]">
-                            <div class="flex-1">
+                            <div class="flex-1 min-w-0">
                                 <h4 class="font-bold text-sm text-[var(--text-main)]">${esc(p.nombre)}</h4>
                                 <p class="text-[11px] text-[var(--text-muted)] mt-0.5">${esc(p.descripcion)}</p>
                             </div>
-                            <div class="text-right">
+                            <div class="text-right shrink-0">
                                 <span class="font-display text-sm font-bold text-emerald-700 dark:text-emerald-300 block">$${Number(p.precio).toLocaleString()}</span>
-                                <button onclick="registrarGasto(${Number(p.precio)}, ${index}, ${pi})" class="mt-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] px-4 py-1.5 rounded-full font-bold">
+                                <button onclick="registrarGasto(${Number(p.precio)}, ${index}, ${pi})" class="mt-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] px-4 py-2 md:py-1.5 rounded-full font-bold">
                                     Pedir
                                 </button>
                             </div>
@@ -442,11 +455,11 @@
                 const estrellasItem = "⭐".repeat(res.estrellas || 5);
                 resenasHtml += `
                     <div class="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-3xl border border-[var(--border-color)]">
-                        <div class="flex justify-between items-center mb-1">
+                        <div class="flex justify-between items-center gap-2 mb-1">
                             <span class="font-bold text-xs text-[var(--text-main)]">${esc(res.usuario)}</span>
-                            <span class="text-xs">${estrellasItem}</span>
+                            <span class="text-xs whitespace-nowrap">${estrellasItem}</span>
                         </div>
-                        <p class="text-[11px] text-[var(--text-muted)] italic">"${esc(res.comentario)}"</p>
+                        <p class="text-[11px] text-[var(--text-muted)] italic break-words">"${esc(res.comentario)}"</p>
                     </div>
                 `;
             });
@@ -455,12 +468,12 @@
             const lng = r.lng || -74.0662;
             const linkGoogleMaps = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
             const linkWaze = `https://www.waze.com/ul?ll=${lat},${lng}&navigate=yes`;
-            const claseLink = "flex-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-[var(--text-main)] text-xs py-2.5 px-3 rounded-full font-bold text-center transition";
+            const claseLink = "flex-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-[var(--text-main)] text-xs py-3 md:py-2.5 px-3 rounded-full font-bold text-center transition";
 
             body.innerHTML = `
-                <img src="${esc(r.foto || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80')}" class="w-full h-48 object-cover rounded-3xl mb-4">
+                <img src="${esc(r.foto || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80')}" class="w-full h-40 md:h-48 object-cover rounded-3xl mb-4">
                 <div class="flex justify-between items-start mb-2 gap-2">
-                    <h2 class="text-2xl font-bold">${esc(r.nombre)}</h2>
+                    <h2 class="text-xl md:text-2xl font-bold">${esc(r.nombre)}</h2>
                     <span class="bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 text-xs px-3 py-1 rounded-full font-bold whitespace-nowrap">⭐ ${esc(r.calificacion)}</span>
                 </div>
                 <p class="text-xs text-emerald-700 dark:text-emerald-300 font-semibold mb-3">📍 ${esc(r.direccion)}</p>
@@ -479,7 +492,7 @@
                 <div class="bg-emerald-50 dark:bg-emerald-950/30 p-4 rounded-3xl border border-emerald-200 dark:border-emerald-800">
                     <h4 class="font-bold text-sm text-emerald-800 dark:text-emerald-200 mb-2">Deja tu propia reseña</h4>
                     <form onsubmit="agregarResenaDirecta(event, ${index})" class="space-y-3">
-                        <div class="grid grid-cols-2 gap-2">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <input type="text" id="modal-user-name" required placeholder="Tu nombre y carrera" class="px-4 py-2 text-xs rounded-full border">
                             <select id="modal-user-stars" class="px-4 py-2 text-xs rounded-full border">
                                 <option value="5">⭐⭐⭐⭐⭐ (5/5)</option>
@@ -490,7 +503,7 @@
                             </select>
                         </div>
                         <textarea id="modal-user-comment" required rows="2" placeholder="¿Qué tal el plato y el precio?" class="w-full px-4 py-2 text-xs rounded-2xl border"></textarea>
-                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs py-2.5 rounded-full font-bold">
+                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs py-3 md:py-2.5 rounded-full font-bold">
                             Publicar reseña
                         </button>
                     </form>

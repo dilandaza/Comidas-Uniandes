@@ -71,6 +71,19 @@
                 <button onclick="cargarRestaurantes()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-xl text-sm font-medium transition shadow-sm">Buscar 🔍</button>
             </div>
 
+            <!-- BOTONES DE FILTRO RÁPIDO SIMPLIFICADOS -->
+            <div class="flex gap-2 overflow-x-auto pb-1 mb-4">
+                <button onclick="filtrarRestaurantes('todos')" id="btn-filtro-todos" class="bg-emerald-600 text-white text-xs px-4 py-2 rounded-xl font-semibold transition shadow-sm whitespace-nowrap">
+                    🍽️ Todos
+                </button>
+                <button onclick="filtrarRestaurantes('menor_15')" id="btn-filtro-menor_15" class="bg-slate-200 dark:bg-slate-800 text-[var(--text-main)] text-xs px-4 py-2 rounded-xl font-semibold transition shadow-sm whitespace-nowrap">
+                    ⚡ Menor de $15.000 (Económico)
+                </button>
+                <button onclick="filtrarRestaurantes('mayor_15')" id="btn-filtro-mayor_15" class="bg-slate-200 dark:bg-slate-800 text-[var(--text-main)] text-xs px-4 py-2 rounded-xl font-semibold transition shadow-sm whitespace-nowrap">
+                    🥩 Mayor de $15.000 (Especial)
+                </button>
+            </div>
+
             <div>
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-lg font-bold">Restaurantes Disponibles</h2>
@@ -108,9 +121,7 @@
             </div>
 
             <!-- LISTA DE PUBLICACIONES -->
-            <div class="space-y-4" id="contenedor-foro">
-                <!-- Se cargan dinámicamente -->
-            </div>
+            <div class="space-y-4" id="contenedor-foro"></div>
         </div>
     </main>
 
@@ -124,6 +135,7 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        // CAMBIA ESTA URL POR LA DE TU BACKEND REAL EN RENDER
         const API_URL = "https://observatorio-obras-bogota.onrender.com";
 
         function esc(t) {
@@ -135,11 +147,68 @@
             maxZoom: 19,
             attribution: '© OpenStreetMap'
         }).addTo(map);
-
+        
         let marcadoresLayer = L.layerGroup().addTo(map);
         let listaGlobal = [];
 
-        // Cambio de Vistas (Inicio / Foro)
+        // Datos de respaldo iniciales para garantizar que la app nunca quede en blanco si Render está despertando
+        const datosRespaldo = [
+            {
+                nombre: "La Nena Restaurante", 
+                direccion: "Calle 19A # 1-28, Bogotá",
+                calificacion: 4.6, 
+                total_reviews: 128, 
+                id_lugar: "rest_1", 
+                abierto: true,
+                lat: 4.6025, 
+                lng: -74.0665, 
+                foto: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80", 
+                nivel_precio: "$$", 
+                es_ejemplo: true,
+                platos: [
+                    { nombre: "Menú Ejecutivo del Día", precio: 12000, descripcion: "Sopa, plato principal con carne o pollo, arroz, ensalada y jugo." },
+                    { nombre: "Parrillada Especial de la Casa", precio: 24000, descripcion: "Corte de res a la parrilla, chorizo, papa criolla, arepa y chimichurri." }
+                ],
+                resenas: [{ usuario: "Sofía G. (Derecho)", estrellas: 5, comentario: "¡Excelente porción y súper económico!" }]
+            },
+            {
+                nombre: "Wok & Bowl UniAndes", 
+                direccion: "Cra. 1 #18A-12, Bogotá",
+                calificacion: 4.8, 
+                total_reviews: 95, 
+                id_lugar: "rest_2", 
+                abierto: true,
+                lat: 4.6020, 
+                lng: -74.0660, 
+                foto: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=600&q=80", 
+                nivel_precio: "$$", 
+                es_ejemplo: true,
+                platos: [
+                    { nombre: "Bowl Universitario", precio: 15000, descripcion: "Base de arroz o quinua, proteína a elección y aguacate." },
+                    { nombre: "Hamburguesa Artesanal Doble", precio: 22000, descripcion: "Doble carne angus, queso cheddar fundido, tocineta y papas rústicas." }
+                ],
+                resenas: [{ usuario: "Daniel M. (Ingeniería)", estrellas: 5, comentario: "La hamburguesa vale totalmente la pena cuando hay presupuesto." }]
+            },
+            {
+                nombre: "Trattoria del Campus", 
+                direccion: "Calle 19 # 2-30, Bogotá",
+                calificacion: 4.7, 
+                total_reviews: 80, 
+                id_lugar: "rest_3", 
+                abierto: true,
+                lat: 4.6010, 
+                lng: -74.0670, 
+                foto: "https://images.unsplash.com/photo-1543353071-10c8ba85a904?auto=format&fit=crop&w=600&q=80", 
+                nivel_precio: "$$", 
+                es_ejemplo: true,
+                platos: [
+                    { nombre: "Pasta Casera Boloñesa", precio: 14000, descripcion: "Porción generosa de pasta con salsa de carne tradicional y queso parmesano." },
+                    { nombre: "Lomo de Cerdo en Salsa BBQ", precio: 21000, descripcion: "Jugoso lomo bañado en salsa BBQ artesanal con puré de papa." }
+                ],
+                resenas: [{ usuario: "Juan K. (Diseño)", estrellas: 5, comentario: "La pasta boloñesa es increíblemente barata y rica." }]
+            }
+        ];
+
         function cambiarVista(vista) {
             const vInicio = document.getElementById('vista-inicio');
             const vForo = document.getElementById('vista-foro');
@@ -177,16 +246,60 @@
 
         async function cargarRestaurantes() {
             const query = document.getElementById('input-busqueda').value || "almuerzo";
-            const contenedor = document.getElementById('contenedor-restaurantes');
-            contenedor.innerHTML = `<div class="col-span-full text-center py-8 text-[var(--text-muted)]">⏳ Cargando restaurantes...</div>`;
+            
+            // Cargar datos de respaldo inmediatos para fluidez
+            listaGlobal = datosRespaldo;
+            aplicarFiltroYRenderizar();
             
             try {
                 const response = await fetch(`${API_URL}/api/restaurantes?query=${encodeURIComponent(query)}`);
-                listaGlobal = await response.json();
-                renderizarApp(listaGlobal);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && data.length > 0) {
+                        listaGlobal = data;
+                        aplicarFiltroYRenderizar();
+                    }
+                }
             } catch (error) {
-                contenedor.innerHTML = `<div class="col-span-full text-center py-8 text-red-500">⚠️ Error conectando con el servidor.</div>`;
+                console.log("Usando datos locales por modo offline o demora en servidor.");
             }
+        }
+
+        let tipoFiltroActual = 'todos';
+
+        function filtrarRestaurantes(tipo) {
+            tipoFiltroActual = tipo;
+            
+            const ids = ['todos', 'menor_15', 'mayor_15'];
+            ids.forEach(id => {
+                const btn = document.getElementById(`btn-filtro-${id}`);
+                if (!btn) return;
+                if (id === tipo) {
+                    btn.className = "bg-emerald-600 text-white text-xs px-4 py-2 rounded-xl font-semibold transition shadow-sm whitespace-nowrap";
+                } else {
+                    btn.className = "bg-slate-200 dark:bg-slate-800 text-[var(--text-main)] text-xs px-4 py-2 rounded-xl font-semibold transition shadow-sm whitespace-nowrap";
+                }
+            });
+
+            aplicarFiltroYRenderizar();
+        }
+
+        function aplicarFiltroYRenderizar() {
+            let listaFiltrada = [...listaGlobal];
+
+            if (tipoFiltroActual === 'menor_15') {
+                // Muestra SOLO los restaurantes que tengan al menos un plato menor o igual a $15.000
+                listaFiltrada = listaFiltrada.filter(r => {
+                    return r.platos && r.platos.some(p => Number(p.precio) <= 15000);
+                });
+            } else if (tipoFiltroActual === 'mayor_15') {
+                // Muestra SOLO los restaurantes que tengan al menos un plato estrictamente mayor a $15.000
+                listaFiltrada = listaFiltrada.filter(r => {
+                    return r.platos && r.platos.some(p => Number(p.precio) > 15000);
+                });
+            }
+
+            renderizarApp(listaFiltrada);
         }
 
         function renderizarApp(lista) {
@@ -240,10 +353,7 @@
         // LÓGICA DEL FORO ESTUDIANTIL
         function obtenerComentarios() {
             let guardados = localStorage.getItem('bolsillou_foro');
-            if (guardados) {
-                return JSON.parse(guardados);
-            }
-            // Comentarios iniciales de ejemplo para la presentación
+            if (guardados) return JSON.parse(guardados);
             return [
                 {
                     nombre: "Camila R. (Ingeniería)",
@@ -292,18 +402,11 @@
             const lugar = document.getElementById('foro-lugar').value;
             const texto = document.getElementById('foro-texto').value;
 
-            const nuevoComentario = {
-                nombre,
-                lugar,
-                texto,
-                fecha: "Hace un momento"
-            };
-
+            const nuevoComentario = { nombre, lugar, texto, fecha: "Hace un momento" };
             let comentarios = obtenerComentarios();
-            comentarios.unshift(nuevoComentario); // Agregar al inicio
+            comentarios.unshift(nuevoComentario);
             localStorage.setItem('bolsillou_foro', JSON.stringify(comentarios));
 
-            // Limpiar formulario y recargar foro
             document.getElementById('foro-nombre').value = '';
             document.getElementById('foro-lugar').value = '';
             document.getElementById('foro-texto').value = '';
@@ -316,27 +419,63 @@
             const modal = document.getElementById('modal-restaurante');
             const body = document.getElementById('modal-body');
 
-            let platosHtml = '';
-            if (!r.platos || r.platos.length === 0) {
-                platosHtml = `<p class="text-xs text-[var(--text-muted)]">Nivel de precio: <b>${esc(r.nivel_precio || "N/D")}</b>.</p>
-                    <button onclick="registrarGastoManual(${index})" class="mt-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-2 rounded-xl font-medium">Registrar un gasto aquí 💸</button>`;
+            const storageKey = `resenas_${r.id_lugar || r.nombre.replace(/\s+/g, '_')}`;
+            if (!r.resenasDinamicas) {
+                let guardadas = localStorage.getItem(storageKey);
+                r.resenasDinamicas = guardadas ? JSON.parse(guardadas) : (r.resenas || [
+                    { usuario: "Sofía G. (Derecho)", estrellas: 5, comentario: "¡Excelente porción y súper económico!" }
+                ]);
             }
-            (r.platos || []).forEach((p, pi) => {
-                platosHtml += `
-                    <div class="bg-slate-50 dark:bg-slate-800 p-3 rounded-2xl flex justify-between items-center gap-3 border border-[var(--border-color)]">
-                        <div class="flex-1">
-                            <h4 class="font-bold text-xs text-[var(--text-main)]">${esc(p.nombre)}</h4>
-                            <p class="text-[11px] text-[var(--text-muted)] mt-0.5">${esc(p.descripcion)}</p>
+
+            // Renderizar Platos filtrados según el botón activo
+            let platosHtml = '';
+            let platosAMostrar = r.platos || [];
+
+            if (tipoFiltroActual === 'menor_15') {
+                platosAMostrar = platosAMostrar.filter(p => Number(p.precio) <= 15000);
+            } else if (tipoFiltroActual === 'mayor_15') {
+                platosAMostrar = platosAMostrar.filter(p => Number(p.precio) > 15000);
+            }
+
+            if (platosAMostrar.length === 0) {
+                platosHtml = `<p class="text-xs text-[var(--text-muted)] italic">No hay platos en este rango de precio para este local.</p>`;
+            } else {
+                platosAMostrar.forEach((p, pi) => {
+                    platosHtml += `
+                        <div class="bg-slate-50 dark:bg-slate-800 p-3 rounded-2xl flex justify-between items-center gap-3 border border-[var(--border-color)]">
+                            <div class="flex-1">
+                                <h4 class="font-bold text-xs text-[var(--text-main)]">${esc(p.nombre)}</h4>
+                                <p class="text-[11px] text-[var(--text-muted)] mt-0.5">${esc(p.descripcion)}</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-xs font-black text-emerald-600 dark:text-emerald-400 block">$${p.precio.toLocaleString()}</span>
+                                <button onclick="registrarGasto(${p.precio}, ${index}, ${pi})" class="mt-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] px-3 py-1.5 rounded-xl font-medium transition shadow-sm">
+                                    Pedir 💸
+                                </button>
+                            </div>
                         </div>
-                        <div class="text-right">
-                            <span class="text-xs font-black text-emerald-600 dark:text-emerald-400 block">$${p.precio.toLocaleString()}</span>
-                            <button onclick="registrarGasto(${p.precio}, ${index}, ${pi})" class="mt-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] px-3 py-1.5 rounded-xl font-medium transition shadow-sm">
-                                Pedir 💸
-                            </button>
+                    `;
+                });
+            }
+
+            let resenasHtml = '';
+            r.resenasDinamicas.forEach((res) => {
+                const estrellasItem = "⭐".repeat(res.estrellas || 5);
+                resenasHtml += `
+                    <div class="bg-slate-50/70 dark:bg-slate-800/50 p-3 rounded-2xl border border-[var(--border-color)]">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-bold text-xs text-[var(--text-main)]">${esc(res.usuario)}</span>
+                            <span class="text-xs">${estrellasItem}</span>
                         </div>
+                        <p class="text-[11px] text-[var(--text-muted)] italic">"${esc(res.comentario)}"</p>
                     </div>
                 `;
             });
+
+            const lat = r.lat || 4.6017;
+            const lng = r.lng || -74.0662;
+            const linkGoogleMaps = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+            const linkWaze = `https://www.waze.com/ul?ll=${lat},${lng}&navigate=yes`;
 
             body.innerHTML = `
                 <img src="${esc(r.foto || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80')}" class="w-full h-48 object-cover rounded-2xl mb-4">
@@ -344,16 +483,65 @@
                     <h2 class="text-lg font-bold">${esc(r.nombre)}</h2>
                     <span class="bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 text-xs px-2.5 py-1 rounded-lg font-semibold">⭐ ${esc(r.calificacion)}</span>
                 </div>
-                <p class="text-xs text-emerald-600 dark:text-emerald-400 font-medium mb-4">📍 ${esc(r.direccion)}</p>
+                <p class="text-xs text-emerald-600 dark:text-emerald-400 font-medium mb-3">📍 ${esc(r.direccion)}</p>
                 
-                <h3 class="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-3">Platos y Precios Disponibles:</h3>
-                <div class="space-y-3">
-                    ${platosHtml}
+                <div class="flex gap-2 mb-6">
+                    <a href="${linkGoogleMaps}" target="_blank" class="flex-1 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 text-xs py-2 px-3 rounded-xl font-semibold text-center hover:bg-blue-100 transition flex items-center justify-center gap-1.5">
+                        🗺️ Google Maps
+                    </a>
+                    <a href="${linkWaze}" target="_blank" class="flex-1 bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 text-sky-700 dark:text-sky-300 text-xs py-2 px-3 rounded-xl font-semibold text-center hover:bg-sky-100 transition flex items-center justify-center gap-1.5">
+                        🚗 Waze
+                    </a>
+                </div>
+
+                <h3 class="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-3">Platos y Precios:</h3>
+                <div class="space-y-3 mb-6">${platosHtml}</div>
+
+                <h3 class="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-3">Reseñas de la Comunidad:</h3>
+                <div class="space-y-3 mb-6">${resenasHtml}</div>
+
+                <div class="bg-emerald-50/50 dark:bg-emerald-950/20 p-4 rounded-2xl border border-emerald-200 dark:border-emerald-800">
+                    <h4 class="font-bold text-xs text-emerald-800 dark:text-emerald-300 mb-2">✍️ Deja tu propia reseña</h4>
+                    <form onsubmit="agregarResenaDirecta(event, ${index})" class="space-y-3">
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="text" id="modal-user-name" required placeholder="Tu nombre y carrera" class="px-3 py-1.5 text-xs rounded-xl border border-[var(--border-color)]">
+                            <select id="modal-user-stars" class="px-3 py-1.5 text-xs rounded-xl border border-[var(--border-color)]">
+                                <option value="5">⭐⭐⭐⭐⭐ (5/5)</option>
+                                <option value="4">⭐⭐⭐⭐ (4/5)</option>
+                                <option value="3">⭐⭐⭐ (3/5)</option>
+                                <option value="2">⭐⭐ (2/5)</option>
+                                <option value="1">⭐ (1/5)</option>
+                            </select>
+                        </div>
+                        <textarea id="modal-user-comment" required rows="2" placeholder="¿Qué tal el plato y el precio?" class="w-full px-3 py-1.5 text-xs rounded-xl border border-[var(--border-color)]"></textarea>
+                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs py-2 rounded-xl font-medium transition shadow-sm">
+                            Publicar Reseña 🚀
+                        </button>
+                    </form>
                 </div>
             `;
 
             modal.classList.remove('hidden');
             modal.classList.add('flex');
+            map.setView([lat, lng], 17);
+        }
+
+        function agregarResenaDirecta(e, index) {
+            e.preventDefault();
+            const r = listaGlobal[index];
+            const nombre = document.getElementById('modal-user-name').value;
+            const estrellas = parseInt(document.getElementById('modal-user-stars').value);
+            const comentario = document.getElementById('modal-user-comment').value;
+
+            const nuevaResena = { usuario: nombre, estrellas, comentario };
+            if (!r.resenasDinamicas) r.resenasDinamicas = [];
+            r.resenasDinamicas.unshift(nuevaResena);
+
+            const storageKey = `resenas_${r.id_lugar || r.nombre.replace(/\s+/g, '_')}`;
+            localStorage.setItem(storageKey, JSON.stringify(r.resenasDinamicas));
+
+            abrirDetalle(index);
+            alert("✅ ¡Reseña agregada con éxito!");
         }
 
         function cerrarModal() {
@@ -382,12 +570,6 @@
         function registrarGasto(monto, indexRest, indexPlato) {
             const r = listaGlobal[indexRest];
             descontar(monto, `${r.nombre} (${r.platos[indexPlato].nombre})`);
-        }
-
-        function registrarGastoManual(indexRest) {
-            const r = listaGlobal[indexRest];
-            const monto = parseInt(prompt(`¿Cuánto gastaste en ${r.nombre}? (COP)`));
-            if (monto > 0) descontar(monto, r.nombre);
         }
 
         function ajustarPresupuesto() {

@@ -53,27 +53,33 @@
         body.dark-mode .leaflet-tile-pane { filter: invert(.9) hue-rotate(180deg) sepia(.4) brightness(.9); }
 
         /* ---- AJUSTES PARA CELULAR ---- */
-        .nav-bar { padding-bottom: calc(.5rem + env(safe-area-inset-bottom, 0px)); }
+        #sidebar { transition: width .3s ease; }
+        #sidebar.colapsada { width: 0; border-right-width: 0; }
+        #sidebar.colapsada #btn-toggle-sidebar { right: -1.5rem; border-top-left-radius: 0; border-bottom-left-radius: 0; }
         .filtros { scrollbar-width: none; }
         .filtros::-webkit-scrollbar { display: none; }
         @media (max-width: 767px) {
             #map { height: 230px; border-radius: 1.25rem; }
             /* 16px evita el zoom automático de iOS al tocar un campo */
             input, textarea, select { font-size: 16px !important; }
-            .nav-icon { width: 3rem; height: 3rem; }
         }
     </style>
 </head>
-<body class="flex flex-col-reverse md:flex-row h-[100dvh] overflow-hidden">
+<body class="flex h-[100dvh] overflow-hidden">
 
     <!-- BARRA LATERAL (en celular pasa a barra inferior) -->
-    <aside class="nav-bar w-full md:w-20 bg-[var(--sidebar-bg)] border-t md:border-t-0 md:border-r border-[var(--border-color)] flex flex-row md:flex-col items-center justify-around md:justify-between pt-2 md:py-6 z-10 shrink-0">
-        <div class="contents md:flex md:flex-col md:items-center md:gap-6">
-            <img src="almorza2-olla.png" alt="almorza2" class="hidden md:block w-12 h-12 object-contain">
-            <div onclick="cambiarVista('inicio')" class="nav-icon w-12 h-12 rounded-full flex items-center justify-center cursor-pointer text-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Restaurantes y Mapa">🍽️</div>
-            <div onclick="cambiarVista('foro')" class="nav-icon w-12 h-12 rounded-full flex items-center justify-center cursor-pointer text-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Foro Comunitario">💬</div>
+    <aside id="sidebar" class="relative shrink-0 w-20 bg-[var(--sidebar-bg)] border-r border-[var(--border-color)] z-20">
+        <div class="absolute inset-0 overflow-hidden">
+            <div class="w-20 h-full flex flex-col items-center py-6 justify-between">
+                <div class="flex flex-col items-center gap-6">
+                    <img src="almorza2-olla.png" alt="almorza2" class="w-12 h-12 object-contain">
+                    <div onclick="cambiarVista('inicio')" class="w-12 h-12 rounded-full flex items-center justify-center cursor-pointer text-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Restaurantes y Mapa">🍽️</div>
+                    <div onclick="cambiarVista('foro')" class="w-12 h-12 rounded-full flex items-center justify-center cursor-pointer text-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition" title="Foro Comunitario">💬</div>
+                </div>
+                <div class="w-12 h-12 rounded-full flex items-center justify-center cursor-pointer text-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition" id="btn-config" title="Modo Oscuro">⚙️</div>
+            </div>
         </div>
-        <div class="nav-icon w-12 h-12 rounded-full flex items-center justify-center cursor-pointer text-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition" id="btn-config" title="Modo Oscuro">⚙️</div>
+        <button id="btn-toggle-sidebar" onclick="alternarSidebar()" aria-label="Mostrar u ocultar menú" class="absolute top-1/2 -translate-y-1/2 -right-3 w-6 h-12 rounded-full bg-emerald-600 text-white text-sm font-bold flex items-center justify-center shadow-md">‹</button>
     </aside>
 
     <!-- CONTENEDOR PRINCIPAL -->
@@ -217,6 +223,16 @@
             }
         ];
 
+        // Barra lateral contraíble (en celular arranca contraída)
+        function alternarSidebar(forzarCerrar) {
+            const sb = document.getElementById('sidebar');
+            const cerrar = forzarCerrar === true ? true : !sb.classList.contains('colapsada');
+            sb.classList.toggle('colapsada', cerrar);
+            document.getElementById('btn-toggle-sidebar').innerText = cerrar ? '›' : '‹';
+            setTimeout(() => map.invalidateSize(), 350);
+        }
+        if (window.innerWidth < 768) alternarSidebar(true);
+
         function cambiarVista(vista) {
             const vInicio = document.getElementById('vista-inicio');
             const vForo = document.getElementById('vista-foro');
@@ -241,6 +257,7 @@
                 cargarForo();
             }
             document.querySelector('main').scrollTo({ top: 0 });
+            if (window.innerWidth < 768) alternarSidebar(true);
         }
 
         // Modo Oscuro
@@ -316,7 +333,8 @@
                 const lng = r.lng || (-74.0662 + (Math.cos(index) * 0.002));
                 const fotoUrl = r.foto || "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=600&q=80";
 
-                const marker = L.marker([lat, lng]).bindPopup(`<b>${esc(r.nombre)}</b><br>${esc(r.direccion)}`);
+                const gi = listaGlobal.indexOf(r);
+                const marker = L.marker([lat, lng]).bindPopup(() => popupHtml(r, gi), { maxWidth: 260 });
                 marcadoresLayer.addLayer(marker);
                 group.addLayer(marker);
 
@@ -332,7 +350,7 @@
                                 <p class="text-[11px] text-emerald-700 dark:text-emerald-300 font-semibold mb-1">📍 ${esc(r.direccion)}</p>
                                 <p class="text-[11px] text-[var(--text-muted)] mb-4">Precio: ${esc(r.nivel_precio || "N/D")}</p>
                             </div>
-                            <button onclick="abrirDetalle(${index})" class="w-full bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-800 dark:hover:bg-emerald-700 text-emerald-900 dark:text-emerald-100 text-xs py-3 md:py-2.5 rounded-full font-bold">
+                            <button onclick="abrirDetalle(${gi})" class="w-full bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-800 dark:hover:bg-emerald-700 text-emerald-900 dark:text-emerald-100 text-xs py-3 md:py-2.5 rounded-full font-bold">
                                 Ver menú y precios
                             </button>
                         </div>
@@ -406,7 +424,42 @@
             alert("✅ ¡Tu tip ha sido publicado en el foro con éxito!");
         }
 
+        // Reseñas de un restaurante (guardadas en el navegador o las del servidor)
+        function obtenerResenas(r) {
+            if (!r.resenasDinamicas) {
+                const key = `resenas_${r.id_lugar || r.nombre.replace(/\s+/g, '_')}`;
+                const guardadas = localStorage.getItem(key);
+                r.resenasDinamicas = guardadas ? JSON.parse(guardadas) : (r.resenas || []);
+            }
+            return r.resenasDinamicas;
+        }
+
+        // Contenido del globito al tocar un punto del mapa
+        function popupHtml(r, gi) {
+            const todas = obtenerResenas(r);
+            const precios = (r.platos || []).map(p => Number(p.precio)).filter(n => !isNaN(n));
+            const desde = precios.length ? `<div style="font-size:11px;color:#a94f21;font-weight:700;margin-top:2px;">Desde $${Math.min(...precios).toLocaleString()}</div>` : '';
+            const resHtml = todas.slice(0, 2).map(x => `
+                <div style="margin-top:6px;padding:6px 8px;border-radius:12px;background:#faf5ec;border:1px solid #eadfca;">
+                    <div style="display:flex;justify-content:space-between;gap:6px;font-size:11px;font-weight:700;color:#3b2f26;"><span>${esc(x.usuario)}</span><span>${"⭐".repeat(x.estrellas || 5)}</span></div>
+                    <div style="font-size:11px;color:#6b5a4b;font-style:italic;margin-top:2px;">"${esc(x.comentario)}"</div>
+                </div>`).join('') || '<div style="font-size:11px;color:#8a7766;margin-top:6px;">Aún no hay reseñas.</div>';
+            const mas = todas.length > 2 ? `<div style="font-size:10px;color:#8a7766;margin-top:4px;">+ ${todas.length - 2} reseñas más</div>` : '';
+            return `
+                <div style="min-width:200px;">
+                    <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start;">
+                        <b style="font-size:14px;">${esc(r.nombre)}</b>
+                        <span style="font-size:11px;font-weight:700;white-space:nowrap;">⭐ ${esc(r.calificacion)}</span>
+                    </div>
+                    <div style="font-size:11px;color:#8a7766;margin-top:2px;">📍 ${esc(r.direccion)}</div>
+                    ${desde}
+                    ${resHtml}${mas}
+                    <button onclick="abrirDetalle(${gi})" style="width:100%;margin-top:8px;padding:8px;border-radius:999px;background:#c8642b;color:#fff;font-size:12px;font-weight:700;border:0;cursor:pointer;">Ver menú y reseñas</button>
+                </div>`;
+        }
+
         function abrirDetalle(index) {
+            map.closePopup();
             const r = listaGlobal[index];
             const modal = document.getElementById('modal-restaurante');
             const body = document.getElementById('modal-body');
